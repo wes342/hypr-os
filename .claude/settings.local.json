@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/wes342/.config/**)",
+      "Read(//home/wes342/.config/kitty/**)",
+      "Read(//home/wes342/.config/rofi/**)",
+      "Read(//home/wes342/.config/ghostty/**)",
+      "Bash(ls -la /home/wes342/.config/starship*)",
+      "Bash(hyprctl monitors:*)",
+      "Bash(git init:*)",
+      "Bash(mkdir -p config/hypr config/waybar config/rofi config/kitty config/ghostty config/fastfetch config/cava config/swaync config/starship config/ranger config/ncmpcpp config/htop config/hyprlock config/hypridle scripts docs)",
+      "Bash(git branch:*)",
+      "Bash(chmod +x:*)",
+      "Bash(gh auth:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+# hypr-os cava config (colors overwritten by theme.sh)
+[general]
+framerate = 60
+bars = 0
+bar_width = 2
+bar_spacing = 1
+
+[color]
+gradient = 1
+gradient_count = 4
+gradient_color_1 = '504945'
+gradient_color_2 = '83a598'
+gradient_color_3 = '928374'
+gradient_color_4 = 'ebdbb2'

@@ -1,0 +1,120 @@
+/* Import theme colors */
+@import "colors.css";
+
+* {
+    font-family: "Iosevka Nerd Font", "Font Awesome 6 Free";
+    font-size: 13px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: alpha(@bg, 0.85);
+    color: @fg;
+    border-radius: 10px;
+    border: 1px solid alpha(@accent_dim, 0.4);
+}
+
+/* Reset all module padding */
+#workspaces,
+#window,
+#mpris,
+#tray,
+#network,
+#pulseaudio,
+#cpu,
+#memory,
+#temperature,
+#clock {
+    padding: 0 10px;
+    margin: 3px 2px;
+    border-radius: 6px;
+}
+
+/* ── Workspaces ─────────────────────────── */
+#workspaces button {
+    color: @fg_dim;
+    padding: 0 6px;
+    margin: 2px 1px;
+    border-radius: 4px;
+    background: transparent;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+#workspaces button.active {
+    color: @fg;
+    background: alpha(@accent, 0.3);
+}
+
+#workspaces button:hover {
+    background: alpha(@fg_dim, 0.15);
+    color: @fg;
+}
+
+#workspaces button.urgent {
+    color: @bg;
+    background: @accent;
+}
+
+/* ── Window Title ───────────────────────── */
+#window {
+    color: @fg_dim;
+    font-style: italic;
+}
+
+/* ── Media ──────────────────────────────── */
+#mpris {
+    color: @accent;
+}
+
+/* ── System Tray ────────────────────────── */
+#tray {
+    padding: 0 6px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+}
+
+/* ── Right modules ──────────────────────── */
+#network,
+#pulseaudio,
+#cpu,
+#memory,
+#temperature {
+    color: @fg;
+}
+
+#network.disconnected {
+    color: @fg_dim;
+}
+
+#pulseaudio.muted {
+    color: @fg_dim;
+}
+
+#temperature.critical {
+    color: #fb4934;
+}
+
+/* ── Clock ──────────────────────────────── */
+#clock {
+    color: @accent;
+    font-weight: bold;
+}
+
+/* ── Tooltip ────────────────────────────── */
+tooltip {
+    background: @bg_dim;
+    border: 1px solid @accent_dim;
+    border-radius: 8px;
+    color: @fg;
+}
+
+tooltip label {
+    color: @fg;
+}

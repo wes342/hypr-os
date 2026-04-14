@@ -1,0 +1,106 @@
+@import "colors.css";
+
+* {
+    font-family: "Iosevka Nerd Font";
+    font-size: 13px;
+}
+
+.notification-row {
+    outline: none;
+}
+
+.notification {
+    border-radius: 10px;
+    margin: 4px 8px;
+    padding: 0;
+    border: 1px solid alpha(@accent_dim, 0.4);
+    background: alpha(@bg, 0.9);
+    color: @fg;
+}
+
+.notification-content {
+    padding: 8px;
+}
+
+.close-button {
+    background: alpha(@accent_dim, 0.3);
+    color: @fg;
+    border-radius: 50%;
+    padding: 2px;
+    margin: 4px;
+}
+
+.close-button:hover {
+    background: @accent;
+    color: @bg;
+}
+
+.notification-default-action {
+    border-radius: 10px;
+}
+
+.notification-default-action:hover {
+    background: alpha(@accent_dim, 0.15);
+}
+
+.notification-action {
+    border-radius: 6px;
+    margin: 4px;
+    padding: 4px 8px;
+    background: alpha(@accent_dim, 0.3);
+    color: @fg;
+}
+
+.notification-action:hover {
+    background: @accent;
+    color: @bg;
+}
+
+.control-center {
+    background: alpha(@bg, 0.92);
+    border-radius: 12px;
+    border: 1px solid alpha(@accent_dim, 0.4);
+    padding: 8px;
+    color: @fg;
+}
+
+.control-center .notification {
+    background: alpha(@bg_highlight, 0.5);
+}
+
+.widget-title {
+    color: @fg;
+    font-weight: bold;
+    padding: 4px 8px;
+}
+
+.widget-title > button {
+    background: alpha(@accent_dim, 0.3);
+    color: @fg;
+    border-radius: 6px;
+    padding: 4px 12px;
+}
+
+.widget-title > button:hover {
+    background: @accent;
+    color: @bg;
+}
+
+.widget-dnd {
+    color: @fg;
+    padding: 4px 8px;
+}
+
+.widget-dnd > switch {
+    border-radius: 10px;
+    background: @bg_highlight;
+}
+
+.widget-dnd > switch:checked {
+    background: @accent;
+}
+
+.widget-dnd > switch slider {
+    border-radius: 50%;
+    background: @fg;
+}

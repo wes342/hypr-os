@@ -1,0 +1,111 @@
+# Application Reference
+
+Per-app configuration notes and customization tips.
+
+## Hyprland
+
+**Config location:** `config/hypr/`
+
+The Hyprland config is split into modular files sourced by the main `hyprland.conf`:
+
+| File | Purpose |
+|------|---------|
+| `hyprland.conf` | Main entry point, sources all other files |
+| `monitors.conf` | Monitor layout and resolution |
+| `env.conf` | Environment variables (Nvidia, Wayland, cursor) |
+| `autostart.conf` | Programs launched at startup |
+| `appearance.conf` | Gaps, borders, blur, animations, transparency |
+| `keybinds.conf` | All keyboard and mouse bindings |
+| `rules.conf` | Window rules and workspace assignments |
+| `theme.conf` | Auto-generated colors from wallpaper |
+
+## Waybar
+
+**Config location:** `config/waybar/`
+
+- `config.jsonc` -- modules and layout
+- `style.css` -- styling (reads theme colors via CSS variables)
+
+Modules: workspaces, window title, mpd/media, system tray, CPU, memory, network, audio, clock, notifications.
+
+## Rofi
+
+**Config location:** `config/rofi/config.rasi`
+
+Grid-style app launcher with icon support. Theme colors are injected from the wallpaper theme system.
+
+## Kitty
+
+**Config location:** `config/kitty/`
+
+- `kitty.conf` -- font, padding, opacity settings
+- `current-theme.conf` -- color scheme (auto-generated from wallpaper)
+
+## Ghostty
+
+**Config location:** `config/ghostty/config`
+
+Mirrors kitty's theme for consistency. Font and opacity settings match.
+
+## Fastfetch
+
+**Config location:** `config/fastfetch/config.jsonc`
+
+System info display. Shows: OS, kernel, packages, WM, terminal, GPU, CPU, memory, disk, uptime.
+
+## Starship
+
+**Config location:** `config/starship/starship.toml`
+
+Cross-shell prompt. Minimal style with git status, directory, and language indicators.
+
+## Cava
+
+**Config location:** `config/cava/config`
+
+Audio visualizer. Colors pulled from the wallpaper theme.
+
+## ncmpcpp
+
+**Config location:** `config/ncmpcpp/config`
+
+MPD client for music playback. Visualizer mode available.
+
+## Ranger
+
+**Config location:** `config/ranger/rc.conf`
+
+TUI file manager with image previews via kitty protocol.
+
+## SwayNC
+
+**Config location:** `config/swaync/`
+
+- `config.json` -- notification behavior
+- `style.css` -- notification appearance (themed)
+
+## Hyprlock
+
+**Config location:** `config/hyprlock/hyprlock.conf`
+
+Lock screen with wallpaper background, clock, and input field.
+
+## Hypridle
+
+**Config location:** `config/hypridle/hypridle.conf`
+
+Idle management: dims screen after 5 min, locks after 10 min, suspends after 30 min.
+
+## htop
+
+**Config location:** `config/htop/htoprc`
+
+Process viewer with custom color scheme.
+
+## Gaming Apps
+
+**Steam:** Launch with `gamescope` for better Wayland compatibility. MangoHud can be enabled per-game via launch options: `mangohud %command%`.
+
+**Gamescope:** Wrapper compositor for games. Useful for resolution scaling and frame limiting.
+
+**MangoHud/GOverlay:** FPS overlay and configuration GUI. Config at `~/.config/MangoHud/MangoHud.conf`.
