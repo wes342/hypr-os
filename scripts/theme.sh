@@ -7,11 +7,18 @@
 set -euo pipefail
 
 WALLPAPER="${1:-$(cat ~/.cache/hypr/current_wallpaper 2>/dev/null || echo '')}"
-CONFIG_DIR="${HYPR_OS_DIR:-$HOME/dev/hypr-os/config}"
+CONFIG_DIR="${HYPR_OS_DIR:-$HOME/dev/hypr-os}/config"
 
 if [[ -z "$WALLPAPER" || ! -f "$WALLPAPER" ]]; then
     echo "No wallpaper specified or found in cache."
     exit 1
+fi
+
+if ! command -v magick &>/dev/null; then
+    echo "imagemagick not installed -- skipping theme generation."
+    echo "Install with: sudo pacman -S imagemagick"
+    notify-send -t 5000 "Theme" "Install imagemagick for dynamic theming: sudo pacman -S imagemagick" 2>/dev/null || true
+    exit 0
 fi
 
 echo "Extracting colors from: $WALLPAPER"
@@ -223,11 +230,23 @@ echo "Theme applied from: $(basename "$WALLPAPER")"
 echo "  bg=$bg  fg=$fg  accent=$accent"
 
 # ── Reload apps ──────────────────────────
-# Reload waybar
-pkill waybar 2>/dev/null; waybar &>/dev/null &
+# Hyprland (border colors from theme.conf)
+hyprctl reload 2>/dev/null || true
 
-# Reload swaync
+# Waybar
+pkill waybar 2>/dev/null; sleep 0.2; waybar &>/dev/null &
+
+# SwayNC
 swaync-client -rs 2>/dev/null || true
+
+# Kitty (SIGUSR1 triggers config reload)
+pkill -USR1 kitty 2>/dev/null || true
+
+# Ghostty (SIGUSR1 triggers config reload)
+pkill -USR1 ghostty 2>/dev/null || true
+
+# Cava
+pkill -USR2 cava 2>/dev/null || true
 
 # Notify
 notify-send -t 3000 "Theme Updated" "Colors extracted from $(basename "$WALLPAPER")" 2>/dev/null || true

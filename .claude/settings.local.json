@@ -12,7 +12,12 @@
       "Bash(git branch:*)",
       "Bash(chmod +x:*)",
       "Bash(gh auth:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(gh repo:*)",
+      "Bash(bash:*)",
+      "Bash(pacman -Q imagemagick)"
     ]
   }
 }

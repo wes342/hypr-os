@@ -1,5 +1,3 @@
-@import "colors.rasi"
-
 configuration {
     modi:                   "drun";
     font:                   "Iosevka Nerd Font 12";
@@ -11,6 +9,7 @@ configuration {
 }
 
 @theme "/dev/null"
+@import "colors.rasi"
 
 * {
     background-color:       @bg;

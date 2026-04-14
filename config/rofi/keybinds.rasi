@@ -1,0 +1,75 @@
+@import "colors.rasi"
+
+* {
+    background-color: @bg;
+    text-color:       @fg;
+    font:             "Iosevka Nerd Font 13";
+}
+
+window {
+    width:         920px;
+    border-radius: 12px;
+    border:        2px solid;
+    border-color:  @accent-dim;
+    padding:       0;
+    location:      center;
+    anchor:        center;
+}
+
+mainbox {
+    padding:  16px;
+    spacing:  10px;
+    children: [ inputbar, listview ];
+}
+
+inputbar {
+    children:         [ prompt ];
+    background-color: @bg-highlight;
+    padding:          10px 16px;
+    border-radius:    8px;
+}
+
+prompt {
+    background-color: inherit;
+    text-color:       @accent;
+    font:             "Iosevka Nerd Font Bold 14";
+}
+
+listview {
+    columns:      1;
+    lines:        18;
+    scrollbar:    true;
+    cycle:        false;
+    dynamic:      false;
+    fixed-height: true;
+    spacing:      0px;
+}
+
+scrollbar {
+    width:         4px;
+    handle-width:  4px;
+    handle-color:  @accent;
+    border-radius: 2px;
+}
+
+element {
+    padding:       4px 10px;
+    border-radius: 4px;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color: @bg;
+    text-color:       @fg;
+}
+
+element selected.normal {
+    background-color: @bg-highlight;
+    text-color:       @fg;
+}
+
+element-text {
+    background-color: inherit;
+    text-color:       inherit;
+    font:             "Iosevka Nerd Font Mono 12";
+}

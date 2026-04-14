@@ -24,10 +24,43 @@ window#waybar {
 #cpu,
 #memory,
 #temperature,
-#clock {
+#clock,
+#custom-launcher,
+#custom-terminal,
+#custom-browser,
+#custom-files {
     padding: 0 10px;
     margin: 3px 2px;
     border-radius: 6px;
+}
+
+/* ── Quick Launch Icons ────────────────── */
+#custom-launcher {
+    color: @fg;
+    font-size: 16px;
+    padding: 0 8px;
+    margin-right: 0;
+}
+
+#custom-launcher:hover,
+#custom-terminal:hover,
+#custom-browser:hover {
+    background: alpha(@accent, 0.2);
+}
+
+#custom-terminal,
+#custom-browser,
+#custom-files {
+    color: @fg_dim;
+    padding: 0 6px;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+#custom-terminal:hover,
+#custom-browser:hover,
+#custom-files:hover {
+    color: @fg;
 }
 
 /* ── Workspaces ─────────────────────────── */

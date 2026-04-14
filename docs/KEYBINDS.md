@@ -15,6 +15,9 @@ All keyboard shortcuts. `SUPER` is the Windows/Meta key.
 | `SUPER + V` | Toggle floating |
 | `SUPER + B` | Random wallpaper + re-theme |
 | `SUPER + L` | Lock screen |
+| `SUPER + SHIFT + R` | Reload Hyprland config |
+| `SUPER + CTRL + R` | Restart Waybar |
+| `SUPER + K` | Keybind cheatsheet |
 
 ## Window Management
 
@@ -56,9 +59,10 @@ All keyboard shortcuts. `SUPER` is the Windows/Meta key.
 | `XF86AudioNext` | Next track |
 | `XF86AudioPrev` | Previous track |
 
-## Screenshots
+## Screenshots (grim + slurp + satty)
 
 | Key | Action |
 |-----|--------|
-| `Print` | Screenshot (full screen) |
-| `SUPER + Print` | Screenshot (select region) |
+| `Print` | Select region, open in satty to annotate/save |
+| `SUPER + Print` | Capture full screen, open in satty |
+| `SUPER + SHIFT + Print` | Capture active window, open in satty |
