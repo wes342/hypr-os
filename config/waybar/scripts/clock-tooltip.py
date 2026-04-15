@@ -170,11 +170,15 @@ def render_calendar(accent: str, accent_dim: str, dim: str, fg: str) -> str:
     weeks = cal.monthdayscalendar(now.year, now.month)
     day_names = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
 
-    # Title (month + year)
     title = now.strftime("%B %Y")
 
+    # 3-char cells (e.g. "  1") give more breathing room than 2-char cells.
+    # Each row is 2 lead + 7 * 3 + 6 separators = 29 mono chars.
+    CELL = 3
+    GRID_WIDTH = 2 + 7 * CELL + 6
+
     header = "  " + " ".join(
-        f'<span foreground="{dim}">{d}</span>' for d in day_names
+        f'<span foreground="{dim}">{d:>{CELL}}</span>' for d in day_names
     )
 
     rows = [header]
@@ -182,17 +186,26 @@ def render_calendar(accent: str, accent_dim: str, dim: str, fg: str) -> str:
         cells = []
         for d in week:
             if d == 0:
-                cells.append("  ")
+                cells.append(" " * CELL)
             elif d == now.day:
                 cells.append(
-                    f'<span bgcolor="{accent_dim}" foreground="{accent}"><b>{d:>2}</b></span>'
+                    f'<span bgcolor="{accent_dim}" foreground="{accent}"><b>{d:>{CELL}}</b></span>'
                 )
             else:
-                cells.append(f'<span foreground="{fg}">{d:>2}</span>')
+                cells.append(f'<span foreground="{fg}">{d:>{CELL}}</span>')
         rows.append("  " + " ".join(cells))
 
+    # Center the month/year title over the grid.
+    title_pad = " " * max(0, (GRID_WIDTH - len(title)) // 2)
+
     body = "\n".join(rows)
-    return f'   <span foreground="{accent}"><b>{title}</b></span>\n\n<tt>{body}</tt>'
+    # size="large" scales the calendar ~20% vs the rest of the tooltip.
+    return (
+        f'<span size="large">'
+        f'{title_pad}<span foreground="{accent}"><b>{title}</b></span>\n\n'
+        f'<tt>{body}</tt>'
+        f'</span>'
+    )
 
 
 def main():
