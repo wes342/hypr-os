@@ -12,12 +12,30 @@ A clean, gaming-focused Hyprland desktop environment for Arch Linux with Nvidia 
 
 ## Quick Start
 
+Fresh Arch install:
+
 ```bash
-git clone https://github.com/<your-user>/hypr-os.git ~/dev/hypr-os
+git clone https://github.com/wes342/hypr-os.git ~/dev/hypr-os
 cd ~/dev/hypr-os
-chmod +x install.sh
+./install.sh --with-packages      # pulls in hyprland/waybar/fonts/etc. (sudo)
+```
+
+If packages are already installed, just run:
+
+```bash
 ./install.sh
 ```
+
+What `install.sh` does:
+
+1. Backs up any existing `~/.config/{hypr,waybar,...}` directories
+2. Symlinks every `config/*` dir into `~/.config/`
+3. Creates `~/Pictures/Wallpaper/` and seeds it with the included default
+   wallpaper if empty
+4. Runs `theme.sh` once to generate the initial color palette
+5. Appends `HYPR_OS_DIR`, `starship`, and `zoxide` lines to your shell rc
+
+After it finishes, log out and back into Hyprland.
 
 ## Applications
 

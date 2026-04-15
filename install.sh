@@ -21,10 +21,35 @@ info()  { echo -e "${GREEN}[+]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
 error() { echo -e "${RED}[-]${NC} $1"; }
 
+WITH_PACKAGES=false
+for arg in "$@"; do
+    case "$arg" in
+        --with-packages|-p) WITH_PACKAGES=true ;;
+        -h|--help)
+            echo "Usage: ./install.sh [--with-packages]"
+            echo ""
+            echo "  --with-packages, -p   Also install system dependencies via"
+            echo "                        install-packages.sh (requires sudo)."
+            exit 0
+            ;;
+    esac
+done
+
 echo "╔══════════════════════════════════════╗"
 echo "║         hypr-os installer            ║"
 echo "╚══════════════════════════════════════╝"
 echo ""
+
+# ── Optional: install system packages ────
+if [[ "$WITH_PACKAGES" == true ]]; then
+    if [[ -x "$SCRIPT_DIR/install-packages.sh" ]]; then
+        info "Running install-packages.sh..."
+        "$SCRIPT_DIR/install-packages.sh"
+        echo ""
+    else
+        error "install-packages.sh missing or not executable."
+    fi
+fi
 
 # ── Backup existing configs ───────────────
 BACKED_UP=false
@@ -82,9 +107,21 @@ mkdir -p "$HOME/.cache/hypr"
 
 info "Created ~/Pictures/Wallpaper/ and ~/Pictures/Screenshots/"
 
+# ── Seed default wallpaper if user's wallpaper dir is empty ──
+if [[ -d "$CONFIG_SRC/wallpapers" ]] && \
+   [[ -z "$(find "$HOME/Pictures/Wallpaper" -maxdepth 1 -type f \
+            \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null)" ]]; then
+    info "Seeding default wallpaper into ~/Pictures/Wallpaper/"
+    cp -n "$CONFIG_SRC/wallpapers/"*.{jpg,jpeg,png,webp} "$HOME/Pictures/Wallpaper/" 2>/dev/null || true
+fi
+
 # ── Make scripts executable ──────────────
-chmod +x "$SCRIPT_DIR/scripts/"*.sh
+chmod +x "$SCRIPT_DIR/scripts/"*.sh 2>/dev/null || true
+chmod +x "$SCRIPT_DIR/install-packages.sh" 2>/dev/null || true
 chmod +x "$CONFIG_SRC/hypr/scripts/"*.sh 2>/dev/null || true
+chmod +x "$CONFIG_SRC/waybar/scripts/"*.sh 2>/dev/null || true
+chmod +x "$CONFIG_SRC/waybar/scripts/"*.py 2>/dev/null || true
+chmod +x "$CONFIG_SRC/eww/scripts/"*.sh 2>/dev/null || true
 info "Scripts marked executable"
 
 # ── Set HYPR_OS_DIR for theme script ─────
@@ -101,10 +138,27 @@ if ! grep -q "HYPR_OS_DIR" "$SHELL_RC" 2>/dev/null; then
     info "Added shell config to $SHELL_RC"
 fi
 
+# ── Generate the initial theme so colors.css etc. exist ──
+if command -v magick &>/dev/null; then
+    # Use any wallpaper we can find (including the seed we just copied)
+    SEED=$(find "$HOME/Pictures/Wallpaper" -maxdepth 1 -type f \
+        \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) \
+        2>/dev/null | head -1)
+    if [[ -n "$SEED" ]]; then
+        info "Generating initial theme from $(basename "$SEED")..."
+        echo "$SEED" > "$HOME/.cache/hypr/current_wallpaper"
+        HYPR_OS_DIR="$SCRIPT_DIR" "$SCRIPT_DIR/scripts/theme.sh" "$SEED" >/dev/null 2>&1 || \
+            warn "theme.sh failed — run it manually after first login."
+    fi
+else
+    warn "imagemagick not installed — theme generation skipped."
+    warn "Run './install.sh --with-packages' or install dependencies first."
+fi
+
 echo ""
 info "Installation complete!"
 info "Reboot or restart Hyprland to apply changes."
-info "Press SUPER+B to set a random wallpaper and apply theming."
+info "Press SUPER+B to re-roll the wallpaper and theme."
 echo ""
 
 if [[ "$BACKED_UP" == true ]]; then
