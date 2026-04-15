@@ -82,14 +82,38 @@ resolve_file() {
 
 apply_wallpaper() {
     local path="$1" state="$2"
+    local hypr_os_dir="${HYPR_OS_DIR:-$HOME/dev/hypr-os}"
+
+    # Rewrite hyprpaper.conf for all connected monitors and restart hyprpaper.
+    # Mirrors the logic in scripts/wallpaper.sh, keeping both code paths in
+    # sync on how the config is written.
     echo "$path" > "$HOME/.cache/hypr/current_wallpaper"
+
+    local monitors
+    monitors=$(hyprctl monitors -j 2>/dev/null | jq -r '.[].name' 2>/dev/null || true)
+    [[ -z "$monitors" ]] && monitors="DP-3"
+
+    {
+        echo "splash = false"
+        echo "ipc = on"
+        echo ""
+        while IFS= read -r mon; do
+            [[ -z "$mon" ]] && continue
+            echo "wallpaper {"
+            echo "    monitor = $mon"
+            echo "    path = $path"
+            echo "}"
+            echo ""
+        done <<< "$monitors"
+    } > "$hypr_os_dir/config/hypr/hyprpaper.conf"
+
+    killall hyprpaper 2>/dev/null || true
+    sleep 0.2
+    (hyprpaper &>/dev/null &)
+
     if [[ "$state" == "on" ]]; then
-        HYPR_OS_DIR="${HYPR_OS_DIR:-$HOME/dev/hypr-os}" \
-            "${HYPR_OS_DIR:-$HOME/dev/hypr-os}/scripts/theme.sh" "$path" \
-            >/dev/null 2>&1
-    else
-        hyprctl hyprpaper preload "$path" >/dev/null 2>&1 || true
-        hyprctl hyprpaper reload ",$path" >/dev/null 2>&1 || true
+        HYPR_OS_DIR="$hypr_os_dir" "$hypr_os_dir/scripts/theme.sh" "$path" \
+            >/dev/null 2>&1 || true
     fi
 }
 
