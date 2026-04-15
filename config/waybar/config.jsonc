@@ -123,10 +123,11 @@
                 ""
             ]
         },
-        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click": "~/.config/hypr/scripts/audio-mixer.sh",
+        "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
         "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 2%+",
         "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%-",
-        "tooltip-format": "{desc}\n{volume}%"
+        "tooltip-format": "{desc}\n{volume}%  ·  click: mixer  ·  right-click: mute  ·  scroll: ±2%"
     },
     "custom/cpu": {
         "format": "{}",

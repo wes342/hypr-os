@@ -75,8 +75,8 @@ PACMAN_PKGS=(
     noto-fonts noto-fonts-cjk noto-fonts-emoji
     papirus-icon-theme adwaita-icon-theme
 
-    # Audio stack (wpctl used by waybar)
-    pipewire pipewire-pulse pipewire-alsa wireplumber
+    # Audio stack (wpctl used by waybar) + GUI mixer
+    pipewire pipewire-pulse pipewire-alsa wireplumber pwvucontrol
 
     # Qt/Wayland + XDG portals
     qt5-wayland qt6-wayland
