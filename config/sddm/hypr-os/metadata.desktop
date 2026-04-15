@@ -1,0 +1,16 @@
+[SddmGreeterTheme]
+Name=hypr-os
+Description=hypr-os matching theme with wallpaper-driven colors
+Author=wes342
+Copyright=MIT
+License=MIT
+Type=sddm-theme
+Version=1.0
+Website=https://github.com/wes342/hypr-os
+Screenshot=preview.png
+MainScript=Main.qml
+ConfigFile=theme.conf
+TranslationsDirectory=translations
+Theme-Id=hypr-os
+Theme-API=2.0
+QtVersion=6

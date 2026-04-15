@@ -25,7 +25,7 @@ OPTIONS=$(cat <<EOF
 󰤄  Suspend
 󰒲  Hibernate
 󰗽  Logout
-  Reboot
+󰜉  Reboot
 ⏻  Shutdown
 EOF
 )

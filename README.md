@@ -96,6 +96,20 @@ Wallpapers are read from `~/Pictures/Wallpaper/`.
 
 See [docs/THEMING.md](docs/THEMING.md) for details.
 
+## Login screen (SDDM)
+
+A matching SDDM greeter theme ships in `config/sddm/hypr-os/`. Install it
+once with:
+
+```bash
+./scripts/install-sddm-theme.sh     # asks for sudo
+```
+
+This symlinks the theme into `/usr/share/sddm/themes/hypr-os/` and sets
+`Current=hypr-os` in `/etc/sddm.conf.d/10-hypr-os.conf`. After that
+`theme.sh` updates the login screen colors automatically whenever you
+re-roll the wallpaper (SUPER + B) — no sudo needed at re-theme time.
+
 ## Directory Structure
 
 ```

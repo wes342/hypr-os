@@ -14,6 +14,7 @@ config/swaync/colors.css
 config/cava/config
 config/hypr/theme.conf
 config/eww/colors.css
+config/sddm/hypr-os/theme.conf
 
 # Local weather override (personal)
 config/hypr-os/weather-location
