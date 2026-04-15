@@ -28,6 +28,16 @@ else
     info "[multilib] already enabled."
 fi
 
+# ── Nicer pacman output: color + progress bar + verbose lists ──
+if ! grep -q '^Color' /etc/pacman.conf; then
+    info "Enabling Color / ILoveCandy / VerbosePkgLists in pacman.conf..."
+    sudo sed -i 's/^#Color/Color/' /etc/pacman.conf
+    sudo sed -i 's/^#VerbosePkgLists/VerbosePkgLists/' /etc/pacman.conf
+    if ! grep -q '^ILoveCandy' /etc/pacman.conf; then
+        sudo sed -i '/^Color$/a ILoveCandy' /etc/pacman.conf
+    fi
+fi
+
 # ── Official repo packages ───────────────────────────────
 PACMAN_PKGS=(
     # Build prerequisites (needed for AUR helper bootstrap + makepkg)
@@ -40,7 +50,7 @@ PACMAN_PKGS=(
     waybar rofi-wayland swaync
 
     # Terminals
-    kitty
+    kitty alacritty
 
     # System / process monitors
     btop htop lm_sensors nvtop
@@ -55,7 +65,7 @@ PACMAN_PKGS=(
     wl-clipboard cliphist grim slurp satty
 
     # Shell niceties (install.sh wires these into bashrc)
-    starship zoxide fastfetch
+    starship zoxide fastfetch fzf bat chafa
 
     # Media / audio
     ncmpcpp mpd cava playerctl
@@ -94,6 +104,7 @@ AUR_PKGS=(
     ghostty                # second terminal
     hyprshot               # screenshotting helper used by keybinds
     nwg-dock-hyprland      # dock
+    blesh-git              # ble.sh: fish-style autosuggestions for bash
 )
 
 # ── Install ─────────────────────────────────────────────

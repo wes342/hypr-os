@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# ┌──────────────────────────────────────────┐
+# │  hypr-os bash environment                │
+# │  Source from ~/.bashrc with:             │
+# │    source ~/dev/hypr-os/config/bash/bashrc.hypros
+# └──────────────────────────────────────────┘
+
+# Skip if non-interactive.
+[[ $- != *i* ]] && return
+
+# ── ble.sh (autosuggestions, syntax highlighting, completion) ──
+# Must be loaded before starship. Falls through if not installed.
+if [[ -r /usr/share/blesh/ble.sh ]]; then
+    source /usr/share/blesh/ble.sh --attach=none
+    # Fish-style inline suggestions + syntax highlighting.
+    bleopt exec_errexit_mark=''
+    bleopt prompt_eol_mark=''
+    bleopt complete_auto_complete=1
+    bleopt complete_auto_delay=150
+    bleopt complete_menu_style='desc'
+    ble-face -s auto_complete    'fg=240,italic'
+    ble-face -s syntax_error     'fg=red,underline'
+    ble-face -s command_builtin  'fg=magenta,bold'
+    ble-face -s command_function 'fg=cyan,bold'
+    ble-face -s command_alias    'fg=green,bold'
+fi
+
+# ── History ──
+HISTSIZE=50000
+HISTFILESIZE=100000
+HISTCONTROL=ignoreboth:erasedups
+HISTIGNORE="ls:ll:cd:pwd:exit:clear:history"
+shopt -s histappend cmdhist checkwinsize globstar
+
+# ── Aliases ──
+alias ls='ls --color=auto --group-directories-first'
+alias ll='ls -lah'
+alias la='ls -A'
+alias grep='grep --color=auto'
+alias diff='diff --color=auto'
+alias ip='ip -color=auto'
+alias cat='bat --paging=never --style=plain 2>/dev/null || command cat'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias g='git'
+alias gs='git status -sb'
+alias gd='git diff'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git log --oneline --graph --decorate -n 20'
+alias pacs='sudo pacman -S'
+alias pacu='sudo pacman -Syu'
+alias pacr='sudo pacman -Rns'
+alias pacss='pacman -Ss'
+
+# ── Zoxide: z / zi ──
+command -v zoxide &>/dev/null && eval "$(zoxide init bash --cmd z)"
+
+# ── FZF integration (if installed) ──
+if command -v fzf &>/dev/null; then
+    [[ -r /usr/share/fzf/key-bindings.bash ]]  && source /usr/share/fzf/key-bindings.bash
+    [[ -r /usr/share/fzf/completion.bash ]]    && source /usr/share/fzf/completion.bash
+fi
+
+# ── Starship prompt ──
+export STARSHIP_CONFIG="$HOME/.config/starship.toml"
+command -v starship &>/dev/null && eval "$(starship init bash)"
+
+# ── Attach ble.sh last (must come after prompt setup). ──
+[[ ${BLE_VERSION-} ]] && ble-attach
+
+# ── Greet with fastfetch on first interactive shell per session ──
+# Avoid spamming on every subshell. Skip inside tmux / VS Code terminals.
+if [[ -z "${HYPROS_GREETED-}" && -z "${TMUX-}" && "$TERM_PROGRAM" != "vscode" ]] \
+    && command -v fastfetch &>/dev/null; then
+    export HYPROS_GREETED=1
+    fastfetch
+fi

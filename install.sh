@@ -129,12 +129,12 @@ SHELL_RC="$HOME/.bashrc"
 [[ -f "$HOME/.zshrc" ]] && SHELL_RC="$HOME/.zshrc"
 
 if ! grep -q "HYPR_OS_DIR" "$SHELL_RC" 2>/dev/null; then
-    echo "" >> "$SHELL_RC"
-    echo "# hypr-os" >> "$SHELL_RC"
-    echo "export HYPR_OS_DIR=\"$SCRIPT_DIR\"" >> "$SHELL_RC"
-    echo 'export STARSHIP_CONFIG="$HOME/.config/starship.toml"' >> "$SHELL_RC"
-    echo 'eval "$(starship init bash)"' >> "$SHELL_RC"
-    echo 'eval "$(zoxide init bash)"' >> "$SHELL_RC"
+    {
+        echo ""
+        echo "# hypr-os"
+        echo "export HYPR_OS_DIR=\"$SCRIPT_DIR\""
+        echo "[ -r \"\$HYPR_OS_DIR/config/bash/bashrc.hypros\" ] && source \"\$HYPR_OS_DIR/config/bash/bashrc.hypros\""
+    } >> "$SHELL_RC"
     info "Added shell config to $SHELL_RC"
 fi
 
