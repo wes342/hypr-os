@@ -1,6 +1,4 @@
-import QtQuick
-import QtQuick.Controls
-import QtQuick.Layouts
+import QtQuick 2.15
 import SddmComponents 2.0
 
 Rectangle {
@@ -28,7 +26,6 @@ Rectangle {
         smooth: true
     }
 
-    // Dim overlay for readability
     Rectangle {
         anchors.fill: parent
         color: "#000000"
@@ -39,6 +36,7 @@ Rectangle {
     Rectangle {
         id: card
         width: 420
+        height: cardColumn.implicitHeight + 56
         anchors.centerIn: parent
         radius: 14
         color: Qt.rgba(
@@ -49,9 +47,8 @@ Rectangle {
         )
         border.width: 2
         border.color: root.accentDim
-        implicitHeight: cardColumn.implicitHeight + 56
 
-        ColumnLayout {
+        Column {
             id: cardColumn
             anchors.fill: parent
             anchors.margins: 28
@@ -62,108 +59,88 @@ Rectangle {
                 color: root.fgDim
                 font.family: root.uiFont
                 font.pixelSize: 13
-                Layout.alignment: Qt.AlignHCenter
+                anchors.horizontalCenter: parent.horizontalCenter
             }
 
-            ComboBox {
-                id: userBox
-                Layout.fillWidth: true
-                model: userModel
-                textRole: "name"
-                currentIndex: userModel.lastIndex
+            Text {
+                id: userLabel
+                text: userModel.lastUser !== "" ? userModel.lastUser : "user"
+                color: root.accent
                 font.family: root.uiFont
-                font.pixelSize: 15
-
-                background: Rectangle {
-                    color: root.bgHighlight
-                    radius: 8
-                }
-                contentItem: Text {
-                    leftPadding: 14
-                    rightPadding: 32
-                    text: userBox.displayText
-                    font: userBox.font
-                    color: root.fg
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-
-            TextField {
-                id: passwordField
-                Layout.fillWidth: true
-                echoMode: TextInput.Password
-                placeholderText: "Password"
-                font.family: root.uiFont
-                font.pixelSize: 15
-                color: root.fg
-                placeholderTextColor: root.fgDim
-                leftPadding: 14
-                rightPadding: 14
-                topPadding: 10
-                bottomPadding: 10
-
-                background: Rectangle {
-                    color: root.bgHighlight
-                    radius: 8
-                    border.width: 1
-                    border.color: passwordField.activeFocus ? root.accent : "transparent"
-                }
-
-                Keys.onReturnPressed: loginButton.clicked()
-                Keys.onEnterPressed: loginButton.clicked()
-                focus: true
-            }
-
-            Button {
-                id: loginButton
-                Layout.fillWidth: true
-                font.family: root.uiFont
-                font.pixelSize: 15
+                font.pixelSize: 22
                 font.bold: true
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
 
-                background: Rectangle {
-                    color: loginButton.pressed ? root.accentDim : root.accent
-                    radius: 8
+            // ── Password box ──
+            Rectangle {
+                id: pwWrap
+                width: parent.width
+                height: 42
+                color: root.bgHighlight
+                radius: 8
+                border.width: 1
+                border.color: pwInput.activeFocus ? root.accent : "transparent"
+
+                Text {
+                    visible: pwInput.text.length === 0
+                    text: "Password"
+                    color: root.fgDim
+                    font.family: root.uiFont
+                    font.pixelSize: 15
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    anchors.leftMargin: 14
                 }
-                contentItem: Text {
+
+                TextInput {
+                    id: pwInput
+                    anchors.fill: parent
+                    anchors.leftMargin: 14
+                    anchors.rightMargin: 14
+                    verticalAlignment: TextInput.AlignVCenter
+                    echoMode: TextInput.Password
+                    passwordCharacter: "•"
+                    color: root.fg
+                    selectionColor: root.accentDim
+                    selectedTextColor: root.fg
+                    font.family: root.uiFont
+                    font.pixelSize: 15
+                    focus: true
+                    clip: true
+                    Keys.onReturnPressed: root.doLogin()
+                    Keys.onEnterPressed: root.doLogin()
+                }
+            }
+
+            // ── Sign in button ──
+            Rectangle {
+                id: signInBtn
+                width: parent.width
+                height: 42
+                radius: 8
+                color: signInArea.pressed ? root.accentDim : root.accent
+
+                Text {
+                    anchors.centerIn: parent
                     text: "Sign in"
                     color: root.bg
-                    font: loginButton.font
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
+                    font.family: root.uiFont
+                    font.pixelSize: 15
+                    font.bold: true
                 }
-                onClicked: sddm.login(userBox.currentText, passwordField.text, sessionBox.currentIndex)
-            }
 
-            // Session selector
-            ComboBox {
-                id: sessionBox
-                Layout.fillWidth: true
-                model: sessionModel
-                textRole: "name"
-                currentIndex: sessionModel.lastIndex
-                font.family: root.uiFont
-                font.pixelSize: 13
-
-                background: Rectangle {
-                    color: "transparent"
-                    border.color: root.accentDim
-                    border.width: 1
-                    radius: 6
-                }
-                contentItem: Text {
-                    leftPadding: 12
-                    rightPadding: 30
-                    text: "Session: " + sessionBox.displayText
-                    font: sessionBox.font
-                    color: root.fgDim
-                    verticalAlignment: Text.AlignVCenter
+                MouseArea {
+                    id: signInArea
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.doLogin()
                 }
             }
 
             Text {
                 id: errorLabel
-                Layout.alignment: Qt.AlignHCenter
+                anchors.horizontalCenter: parent.horizontalCenter
                 color: "#e06c75"
                 font.family: root.uiFont
                 font.pixelSize: 12
@@ -174,38 +151,51 @@ Rectangle {
         }
     }
 
+    function doLogin() {
+        sddm.login(userLabel.text, pwInput.text, sessionModel.lastIndex)
+    }
+
     // ── Power controls (bottom right) ──
     Row {
         anchors.bottom: parent.bottom
         anchors.right: parent.right
         anchors.margins: 24
-        spacing: 18
+        spacing: 22
 
-        component PowerIcon: Text {
-            property string glyph: ""
-            property var action
-            text: glyph
-            color: root.fgDim
-            font.family: root.uiFont
-            font.pixelSize: 22
+        Component {
+            id: powerIcon
+            Text {
+                property string glyph: ""
+                property var onClicked
+                text: glyph
+                color: root.fgDim
+                font.family: root.uiFont
+                font.pixelSize: 22
 
-            MouseArea {
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onEntered: parent.color = root.fg
-                onExited: parent.color = root.fgDim
-                onClicked: action()
+                MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onEntered: parent.color = root.fg
+                    onExited: parent.color = root.fgDim
+                    onClicked: parent.onClicked()
+                }
             }
         }
 
-        PowerIcon {
-            glyph: "󰜉"
-            action: function() { sddm.reboot() }
+        Loader {
+            sourceComponent: powerIcon
+            onLoaded: {
+                item.glyph = "󰜉"
+                item.onClicked = function() { sddm.reboot() }
+            }
         }
-        PowerIcon {
-            glyph: "⏻"
-            action: function() { sddm.powerOff() }
+        Loader {
+            sourceComponent: powerIcon
+            onLoaded: {
+                item.glyph = "⏻"
+                item.onClicked = function() { sddm.powerOff() }
+            }
         }
     }
 
@@ -233,8 +223,8 @@ Rectangle {
         target: sddm
         function onLoginFailed() {
             errorLabel.text = "Login failed"
-            passwordField.text = ""
-            passwordField.focus = true
+            pwInput.text = ""
+            pwInput.focus = true
         }
         function onLoginSucceeded() {
             errorLabel.text = ""
