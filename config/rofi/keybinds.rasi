@@ -1,5 +1,9 @@
 @import "colors.rasi"
 
+configuration {
+    show-icons: false;
+}
+
 * {
     background-color: @bg;
     text-color:       @fg;

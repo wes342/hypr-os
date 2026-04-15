@@ -36,9 +36,12 @@ rofi -dmenu \
 <tt>  To Scratch           Super + Shift + S           Send window to scratchpad       </tt>
 <tt>  Scroll WS            Super + Scroll              Cycle workspaces                </tt>
 <tt><b>─── Screenshots ───────────────────────────────────────────────────────────────</b></tt>
-<tt>  Region               Print                       Select region + annotate        </tt>
-<tt>  Full Screen          Super + Print               Capture all monitors + edit     </tt>
-<tt>  Window               Super + Shift + Print       Capture active window           </tt>
+<tt>  Region               Print                       Save + copy + annotate          </tt>
+<tt>  Full Screen          Super + Print               All monitors, save + edit       </tt>
+<tt>  Window               Super + Shift + Print       Active window, save + edit      </tt>
+<tt>  Region (clip)        Ctrl + Print                Clipboard only, no file         </tt>
+<tt>  Full Screen (clip)   Super + Ctrl + Print        All monitors to clipboard       </tt>
+<tt>  Window (clip)        Super + Ctrl + Shift + Prt  Active window to clipboard      </tt>
 <tt><b>─── Session ───────────────────────────────────────────────────────────────────</b></tt>
 <tt>  Lock                 Super + L                   Lock screen (hyprlock)          </tt>
 <tt>  Reload               Super + Shift + R           Reload Hyprland config          </tt>
