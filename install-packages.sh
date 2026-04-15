@@ -19,22 +19,34 @@ if ! command -v pacman &>/dev/null; then
     exit 1
 fi
 
+# ── Enable multilib repo (needed for 32-bit libs / some AUR builds) ──
+if ! pacman -Sl multilib &>/dev/null; then
+    info "Enabling [multilib] repo in /etc/pacman.conf..."
+    sudo sed -i '/^#\[multilib\]/,/^#Include/{s/^#//}' /etc/pacman.conf
+    sudo pacman -Sy
+else
+    info "[multilib] already enabled."
+fi
+
 # ── Official repo packages ───────────────────────────────
 PACMAN_PKGS=(
+    # Build prerequisites (needed for AUR helper bootstrap + makepkg)
+    git base-devel
+
     # Hyprland stack
     hyprland hyprpaper hyprlock hypridle
 
     # Bar, launcher, notifications
     waybar rofi-wayland swaync
 
-    # Terminals + terminal-ish apps
-    kitty btop
+    # Terminals
+    kitty
 
-    # File manager
-    thunar
+    # System / process monitors
+    btop htop lm_sensors nvtop
 
-    # System monitoring
-    lm_sensors nvtop
+    # File manager + thumbnailers + archives
+    thunar thunar-archive-plugin tumbler ffmpegthumbnailer ark ranger
 
     # Tooling the scripts rely on
     imagemagick jq python curl bc
@@ -43,22 +55,31 @@ PACMAN_PKGS=(
     wl-clipboard cliphist grim slurp
 
     # Shell niceties (install.sh wires these into bashrc)
-    starship zoxide
+    starship zoxide fastfetch
+
+    # Media / audio
+    ncmpcpp mpd cava playerctl
 
     # Fonts + icons
-    ttf-iosevka-nerd ttf-font-awesome papirus-icon-theme adwaita-icon-theme
+    ttf-iosevka-nerd ttf-jetbrains-mono-nerd ttf-font-awesome
+    noto-fonts noto-fonts-cjk noto-fonts-emoji
+    papirus-icon-theme adwaita-icon-theme
 
-    # Audio (wpctl used by waybar/pulseaudio)
-    pipewire pipewire-pulse wireplumber
+    # Audio stack (wpctl used by waybar)
+    pipewire pipewire-pulse pipewire-alsa wireplumber
 
-    # XDG integration
-    xdg-desktop-portal-hyprland xdg-utils
+    # Qt/Wayland + XDG portals
+    qt5-wayland qt6-wayland
+    xdg-desktop-portal-hyprland xdg-desktop-portal-gtk xdg-utils
 
     # GTK / polkit / tray
     polkit-gnome network-manager-applet
 
-    # For waybar eww widgets (kept for future — harmless to have)
-    eww
+    # Browsers + everyday apps
+    firefox discord code
+
+    # Gaming (needs multilib)
+    steam gamescope mangohud lib32-mangohud goverlay wine winetricks
 )
 
 # NVIDIA-specific bits (only if an NVIDIA GPU is present)
@@ -69,15 +90,17 @@ fi
 
 # ── AUR packages ────────────────────────────────────────
 AUR_PKGS=(
-    ghostty          # second terminal (may also be in extra on newer Arch)
-    hyprshot         # screenshotting helper used by keybinds
+    eww                    # widget toolkit for waybar dropdowns (AUR-only)
+    ghostty                # second terminal
+    hyprshot               # screenshotting helper used by keybinds
+    nwg-dock-hyprland      # dock
 )
 
 # ── Install ─────────────────────────────────────────────
 info "Installing official repo packages (${#PACMAN_PKGS[@]} packages)..."
 sudo pacman -S --needed --noconfirm "${PACMAN_PKGS[@]}"
 
-# Detect AUR helper
+# Detect AUR helper; bootstrap yay if none is present
 AUR_HELPER=""
 for h in paru yay; do
     if command -v "$h" &>/dev/null; then
@@ -85,13 +108,26 @@ for h in paru yay; do
     fi
 done
 
+if [[ -z "$AUR_HELPER" ]]; then
+    info "No AUR helper found — bootstrapping yay from AUR..."
+    TMPDIR=$(mktemp -d)
+    git clone https://aur.archlinux.org/yay-bin.git "$TMPDIR/yay-bin"
+    (cd "$TMPDIR/yay-bin" && makepkg -si --noconfirm)
+    rm -rf "$TMPDIR"
+    if command -v yay &>/dev/null; then
+        AUR_HELPER="yay"
+        info "yay installed."
+    else
+        warn "yay bootstrap failed — install an AUR helper manually, then rerun."
+    fi
+fi
+
 if [[ -n "$AUR_HELPER" ]]; then
     info "Installing AUR packages via $AUR_HELPER (${#AUR_PKGS[@]} packages)..."
     "$AUR_HELPER" -S --needed --noconfirm "${AUR_PKGS[@]}" || \
         warn "Some AUR packages failed; you can retry individually."
 else
-    warn "No AUR helper (paru/yay) found."
-    warn "Install paru or yay first, then install these manually:"
+    warn "Skipping AUR packages. Install these manually once an AUR helper is available:"
     for p in "${AUR_PKGS[@]}"; do
         echo "    $p"
     done

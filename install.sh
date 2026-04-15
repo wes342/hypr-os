@@ -147,7 +147,7 @@ if command -v magick &>/dev/null; then
     if [[ -n "$SEED" ]]; then
         info "Generating initial theme from $(basename "$SEED")..."
         echo "$SEED" > "$HOME/.cache/hypr/current_wallpaper"
-        HYPR_OS_DIR="$SCRIPT_DIR" "$SCRIPT_DIR/scripts/theme.sh" "$SEED" >/dev/null 2>&1 || \
+        HYPR_OS_DIR="$SCRIPT_DIR" "$SCRIPT_DIR/scripts/theme.sh" "$SEED" || \
             warn "theme.sh failed — run it manually after first login."
     fi
 else

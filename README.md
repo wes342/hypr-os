@@ -51,6 +51,28 @@ After it finishes, log out and back into Hyprland.
 | **Gaming** | steam, gamescope, mangohud, goverlay, wine, winetricks |
 | **Other** | firefox, discord, code (VS Code), htop |
 
+### One-line install (everything above)
+
+`install.sh --with-packages` already runs this for you. If you want to install
+the full app set by hand:
+
+```bash
+# Official repos
+sudo pacman -S --needed git base-devel hyprland waybar hyprpaper hyprlock hypridle \
+  rofi-wayland swaync kitty btop htop lm_sensors nvtop thunar thunar-archive-plugin \
+  tumbler ffmpegthumbnailer ark ranger imagemagick jq python curl bc wl-clipboard \
+  cliphist grim slurp starship zoxide fastfetch ncmpcpp mpd cava playerctl \
+  ttf-iosevka-nerd ttf-jetbrains-mono-nerd ttf-font-awesome noto-fonts \
+  noto-fonts-cjk noto-fonts-emoji papirus-icon-theme adwaita-icon-theme \
+  pipewire pipewire-pulse pipewire-alsa wireplumber qt5-wayland qt6-wayland \
+  xdg-desktop-portal-hyprland xdg-desktop-portal-gtk xdg-utils polkit-gnome \
+  network-manager-applet firefox discord code steam gamescope mangohud \
+  lib32-mangohud goverlay wine winetricks
+
+# AUR (requires yay/paru — enable [multilib] in /etc/pacman.conf first for gaming)
+yay -S --needed eww ghostty hyprshot nwg-dock-hyprland
+```
+
 ## Keybindings
 
 See [docs/KEYBINDS.md](docs/KEYBINDS.md) for the full list. Highlights:

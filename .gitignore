@@ -20,3 +20,6 @@ config/hypr-os/weather-location
 
 # Runtime state
 /tmp/hypr-os-metrics/
+
+# Bootstrapped AUR helper build dir (if user ran makepkg in-tree)
+yay-bin/
