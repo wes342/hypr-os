@@ -86,12 +86,6 @@ Rectangle {
                     color: root.fg
                     verticalAlignment: Text.AlignVCenter
                 }
-                popup.background: Rectangle {
-                    color: root.bgHighlight
-                    radius: 8
-                    border.color: root.accentDim
-                    border.width: 1
-                }
             }
 
             TextField {
@@ -164,10 +158,6 @@ Rectangle {
                     font: sessionBox.font
                     color: root.fgDim
                     verticalAlignment: Text.AlignVCenter
-                }
-                popup.background: Rectangle {
-                    color: root.bgHighlight
-                    radius: 8
                 }
             }
 
