@@ -102,24 +102,27 @@ while true; do
         PROMPT="[ ] re-theme   Alt+t"
     fi
 
-    # -kb-custom-1 Alt+t  → exits with code 10 when Alt+T is pressed.
-    # Tab is reserved by rofi for row-tab, so we pick a free combo.
-    # -a <idx> marks the currently-applied wallpaper with the "active" style.
-    ENTRIES=$(build_entries)
+    # Write entries to a temp file so we don't lose the \0 icon markers
+    # to bash command substitution (which strips NUL bytes).
+    ENTRIES_FILE=$(mktemp)
+    trap 'rm -f "$ENTRIES_FILE"' EXIT
+    build_entries > "$ENTRIES_FILE"
+
     ACTIVE_ARGS=()
     [[ -n "$CURRENT_INDEX" ]] && ACTIVE_ARGS=( -a "$CURRENT_INDEX" )
 
     set +e
-    CHOICE=$(printf '%s\n' "$ENTRIES" | rofi -dmenu -i \
+    CHOICE=$(rofi -dmenu -i \
         -theme "$THEME_RASI" \
         -p "$PROMPT" \
         -format 's' \
         -matching fuzzy \
         -kb-custom-1 "Alt+t" \
         -kb-accept-entry "Return" \
-        "${ACTIVE_ARGS[@]}")
+        "${ACTIVE_ARGS[@]}" < "$ENTRIES_FILE")
     RC=$?
     set -e
+    rm -f "$ENTRIES_FILE"
 
     case "$RC" in
         0)
