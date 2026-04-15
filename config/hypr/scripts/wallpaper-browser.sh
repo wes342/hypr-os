@@ -85,19 +85,20 @@ apply_wallpaper() {
 while true; do
     STATE=$(cat "$STATE_FILE")
     if [[ "$STATE" == "on" ]]; then
-        PROMPT="Wallpaper  [󰄲 theme]   Tab: toggle"
+        PROMPT="Wallpaper  [󰄲 theme]   Alt+t: toggle"
     else
-        PROMPT="Wallpaper  [󰄮 theme]   Tab: toggle"
+        PROMPT="Wallpaper  [󰄮 theme]   Alt+t: toggle"
     fi
 
-    # -kb-custom-1 Tab  → exits with code 10 when Tab is pressed.
+    # -kb-custom-1 Alt+t  → exits with code 10 when Alt+T is pressed.
+    # Tab is reserved by rofi for row-tab, so we pick a free combo.
     set +e
     CHOICE=$(build_entries | rofi -dmenu -i \
         -theme "$THEME_RASI" \
         -p "$PROMPT" \
         -format 's' \
         -matching fuzzy \
-        -kb-custom-1 "Tab" \
+        -kb-custom-1 "Alt+t" \
         -kb-accept-entry "Return")
     RC=$?
     set -e
