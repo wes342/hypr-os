@@ -1,6 +1,6 @@
 /*
- * Wallpaper browser -- grid of thumbnails. Picks up current palette
- * from colors.rasi so it re-themes automatically.
+ * Wallpaper browser -- 4x2 grid of large thumbnails.
+ * Picks up current palette from colors.rasi so it re-themes.
  */
 
 @import "colors.rasi"
@@ -8,8 +8,6 @@
 configuration {
     show-icons:         true;
     font:               "Iosevka Nerd Font 11";
-    me-select-entry:    "";
-    me-accept-entry:    "MousePrimary";
 }
 
 * {
@@ -19,16 +17,17 @@ configuration {
 
 window {
     border-radius:      14px;
-    width:              62%;
-    height:             78%;
-    padding:            24px;
+    width:              80%;
+    height:             82%;
+    padding:            10px;
     border:             2px solid;
     border-color:       @accent-dim;
 }
 
 mainbox {
     children:           [ inputbar, listview ];
-    spacing:            14px;
+    spacing:            10px;
+    padding:            0;
 }
 
 inputbar {
@@ -53,33 +52,34 @@ entry {
 
 listview {
     columns:            4;
-    lines:              3;
+    lines:              2;
     cycle:              true;
-    dynamic:            true;
+    dynamic:            false;
     layout:             vertical;
-    spacing:            12px;
+    spacing:            10px;
     scrollbar:          false;
     fixed-height:       true;
     fixed-columns:      true;
+    flow:               horizontal;
 }
 
 element {
     orientation:        vertical;
     padding:            6px;
-    spacing:            6px;
+    spacing:            4px;
     border-radius:      10px;
     cursor:             pointer;
 }
 
 element-icon {
-    size:               22%;
+    size:               300px;
     horizontal-align:   0.5;
     vertical-align:     0.5;
     border-radius:      8px;
 }
 
 element-text {
-    expand:             true;
+    expand:             false;
     horizontal-align:   0.5;
     vertical-align:     0.5;
     font:               "Iosevka Nerd Font 10";
@@ -94,8 +94,4 @@ element selected {
     background-color:   @bg-highlight;
     border:             2px solid;
     border-color:       @accent;
-}
-
-element.alternate {
-    background-color:   @bg;
 }
