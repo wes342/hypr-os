@@ -47,7 +47,7 @@ After it finishes, log out and back into Hyprland.
 | **File Manager** | thunar, ranger, tumbler, ffmpegthumbnailer, thunar-archive-plugin, ark |
 | **Notifications** | swaync |
 | **Shell** | starship, zoxide, fastfetch |
-| **Media / Audio** | ncmpcpp, cava, playerctl |
+| **Media / Audio** | ncmpcpp, cava, playerctl, pavucontrol (or `pwvucontrol` from AUR for the lighter PipeWire-native mixer) |
 | **Gaming** | steam, gamescope, mangohud, goverlay, wine, winetricks |
 | **Other** | firefox, discord, code (VS Code), htop |
 
@@ -64,7 +64,7 @@ sudo pacman -S --needed git base-devel hyprland waybar hyprpaper hyprlock hyprid
   cliphist grim slurp starship zoxide fastfetch ncmpcpp mpd cava playerctl \
   ttf-iosevka-nerd ttf-jetbrains-mono-nerd ttf-font-awesome noto-fonts \
   noto-fonts-cjk noto-fonts-emoji papirus-icon-theme adwaita-icon-theme \
-  pipewire pipewire-pulse pipewire-alsa wireplumber qt5-wayland qt6-wayland \
+  pipewire pipewire-pulse pipewire-alsa wireplumber pavucontrol qt5-wayland qt6-wayland \
   xdg-desktop-portal-hyprland xdg-desktop-portal-gtk xdg-utils polkit-gnome \
   network-manager-applet firefox discord code steam gamescope mangohud \
   lib32-mangohud goverlay wine winetricks

@@ -76,7 +76,10 @@ PACMAN_PKGS=(
     papirus-icon-theme adwaita-icon-theme
 
     # Audio stack (wpctl used by waybar) + GUI mixer
-    pipewire pipewire-pulse pipewire-alsa wireplumber pwvucontrol
+    # pavucontrol is the classic mixer (always in [extra]). For a
+    # lighter PipeWire-native UI, install `pwvucontrol` from AUR --
+    # the waybar handler picks whichever is present.
+    pipewire pipewire-pulse pipewire-alsa wireplumber pavucontrol
 
     # Qt/Wayland + XDG portals
     qt5-wayland qt6-wayland

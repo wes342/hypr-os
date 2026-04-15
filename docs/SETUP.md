@@ -76,6 +76,23 @@ sudo pacman -S starship zoxide fastfetch htop
 sudo pacman -S ncmpcpp cava playerctl mpd
 ```
 
+### Audio mixer (waybar speaker icon)
+
+The waybar volume icon's left-click handler launches a GUI mixer.
+Two options:
+
+```bash
+# Classic PulseAudio mixer (always in [extra], reliable):
+sudo pacman -S pavucontrol
+
+# OR the lighter PipeWire-native UI (from AUR):
+yay -S pwvucontrol
+```
+
+Install at least one. The handler prefers `pwvucontrol` when both are
+present, so you can install `pwvucontrol` later and it'll take over
+without any config change.
+
 ### Theming Dependencies
 
 ```bash
