@@ -96,6 +96,40 @@ Wallpapers are read from `~/Pictures/Wallpaper/`.
 
 See [docs/THEMING.md](docs/THEMING.md) for details.
 
+## Cleanup: packages you can remove
+
+`archinstall`'s Hyprland profile bundles a few apps that hypr-os
+replaces with its own picks. After installing hypr-os you can safely
+remove the duplicates:
+
+```bash
+sudo pacman -Rns wofi dolphin dunst polkit-kde-agent hyprpolkitagent
+```
+
+| Removable | Why | hypr-os uses |
+|-----------|-----|--------------|
+| `wofi` | duplicate launcher | `rofi-wayland` |
+| `dolphin` | duplicate file manager | `thunar` |
+| `dunst` | duplicate notification daemon | `swaync` |
+| `polkit-kde-agent` | redundant polkit agent | `polkit-gnome` (autostarted) |
+| `hyprpolkitagent` | redundant polkit agent | `polkit-gnome` |
+
+Likely safe (verify first):
+
+| Removable | Why |
+|-----------|-----|
+| `xorg-server`, `xorg-xinit` | hypr-os is pure Wayland; Steam uses `xwayland` (separate package). Remove unless you want an X11 fallback session. |
+| `wireless_tools` | legacy `iwconfig`; NetworkManager + iwd handle wireless |
+| `linux` (the stock kernel) | only if your bootloader exclusively boots `linux-zen` |
+| `nano` *or* `vim` | pick whichever editor you actually use |
+| `yay-bin-debug`, `*-debug` | debug symbol packages; only needed if debugging that specific tool |
+
+After any removal, sweep up orphaned dependencies:
+
+```bash
+sudo pacman -Qdtq | sudo pacman -Rns -
+```
+
 ## Login screen (SDDM)
 
 A matching SDDM greeter theme ships in `config/sddm/hypr-os/`. Install it

@@ -144,6 +144,48 @@ Hyprland
 2. Press `SUPER + B` to pick a random wallpaper and apply theming
 3. Configure Firefox, Discord, Steam etc. to your preference
 
+## Cleanup: remove duplicates installed by archinstall's Hyprland profile
+
+archinstall's Hyprland preset installs a handful of apps that overlap
+with hypr-os's choices. After hypr-os is up and running you can drop
+them:
+
+```bash
+sudo pacman -Rns wofi dolphin dunst polkit-kde-agent hyprpolkitagent
+```
+
+What each one is and what hypr-os uses instead:
+
+- `wofi` -> replaced by `rofi-wayland` (launcher, power menu, wallpaper
+  browser, keybinds cheatsheet all use rofi)
+- `dolphin` -> replaced by `thunar`
+- `dunst` -> replaced by `swaync`
+- `polkit-kde-agent` and `hyprpolkitagent` -> redundant; hypr-os
+  autostarts `polkit-gnome` from `config/hypr/autostart.conf`. Pick
+  one polkit agent and remove the others.
+
+Other things archinstall or its presets may have left around that you
+likely don't need on a Wayland-only Hyprland setup:
+
+- `xorg-server`, `xorg-xinit` -- pure Wayland; Steam, Wine etc. pull
+  in `xwayland` (a separate, much smaller package). Only keep these
+  if you want an X11 fallback session.
+- `wireless_tools` -- legacy `iwconfig`. NetworkManager + iwd cover
+  wireless on a modern Arch install.
+- The stock `linux` kernel -- if your bootloader only boots
+  `linux-zen`, the stock kernel + headers can be removed. Confirm
+  with `cat /etc/limine.conf` (or `/boot/loader/entries/*.conf` for
+  systemd-boot) before removing.
+- `nano` *or* `vim` -- whichever you don't actually use.
+- `*-debug` packages (`yay-bin-debug`, `eww-git-debug`, ...) --
+  symbols only useful if you're attaching gdb to that specific tool.
+
+After removing anything, mop up orphaned dependencies:
+
+```bash
+sudo pacman -Qdtq | sudo pacman -Rns -
+```
+
 ## Updating
 
 Pull the latest changes and re-run the install:
