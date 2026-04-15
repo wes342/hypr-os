@@ -1,0 +1,208 @@
+;; ┌──────────────────────────────────────────┐
+;; │  hypr-os system metrics widgets          │
+;; │  metrics-bar (always-on icon row)        │
+;; │  + 4 dropdown windows                    │
+;; └──────────────────────────────────────────┘
+
+;; ── Polled metric sources ────────────────────
+(defpoll cpu     :interval "1.5s" :initial "{}" "cat /tmp/hypr-os-metrics/cpu.json 2>/dev/null || echo '{}'")
+(defpoll gpu     :interval "1.5s" :initial "{}" "cat /tmp/hypr-os-metrics/gpu.json 2>/dev/null || echo '{}'")
+(defpoll ram     :interval "1.5s" :initial "{}" "cat /tmp/hypr-os-metrics/ram.json 2>/dev/null || echo '{}'")
+(defpoll storage :interval "5s"   :initial "{}" "cat /tmp/hypr-os-metrics/storage.json 2>/dev/null || echo '{}'")
+
+;; ── Helper: status → color class ─────────────
+(defwidget chip [status]
+  (label :class "chip chip-${status}" :text status))
+
+;; ── Bar icon (top of screen, always visible) ─
+(defwidget bar-icon [name icon value status tooltip-cmd]
+  (eventbox :class "bar-icon bar-icon-${status}"
+            :onhover    "~/.config/eww/scripts/hover.sh enter ${name}"
+            :onhoverlost "~/.config/eww/scripts/hover.sh leave ${name}"
+            :onclick    "${tooltip-cmd}"
+    (box :orientation "h" :space-evenly false :spacing 6
+      (label :class "bar-icon-glyph" :text icon)
+      (label :class "bar-icon-value" :text value))))
+
+;; ── Always-visible metrics bar ───────────────
+(defwindow metrics-bar
+  :monitor 0
+  :geometry (geometry :x "8px" :y "4px" :width "300px" :height "30px" :anchor "top right")
+  :stacking "fg"
+  :focusable false
+  :exclusive false
+  :namespace "hypr-os-metricsbar"
+  (box :class "metrics-bar" :orientation "h" :space-evenly true :spacing 4
+    (bar-icon :name "cpu"
+              :icon ""
+              :value "${cpu.temp_c ?: '–'}°"
+              :status {cpu.status ?: "loading"}
+              :tooltip-cmd "~/.config/hypr/scripts/launch.sh terminal -e btop")
+    (bar-icon :name "gpu"
+              :icon ""
+              :value "${gpu.temp_c ?: '–'}°"
+              :status {gpu.status ?: "loading"}
+              :tooltip-cmd "~/.config/hypr/scripts/launch.sh terminal -e nvtop")
+    (bar-icon :name "ram"
+              :icon "󰍛"
+              :value "${ram.used_pct ?: '–'}%"
+              :status {ram.status ?: "loading"}
+              :tooltip-cmd "~/.config/hypr/scripts/launch.sh terminal -e btop")
+    (bar-icon :name "storage"
+              :icon "󰋊"
+              :value "${storage.root_pct ?: '–'}%"
+              :status {storage.status ?: "loading"}
+              :tooltip-cmd "thunar")))
+
+;; ── Dropdown building blocks ─────────────────
+(defwidget dropdown-shell [variant title icon status]
+  (eventbox :onhover    "~/.config/eww/scripts/hover.sh enter ${variant}"
+            :onhoverlost "~/.config/eww/scripts/hover.sh leave ${variant}"
+    (box :class "dropdown dropdown-${variant}" :orientation "v" :space-evenly false :spacing 12
+      (box :class "dropdown-header" :orientation "h" :space-evenly false :spacing 10
+        (label :class "dropdown-icon" :text icon)
+        (box :orientation "v" :space-evenly false :hexpand true
+          (label :class "dropdown-title" :text title :xalign 0)
+          (label :class "dropdown-subtitle" :text {variant == "cpu" ? "Processor" :
+                                                    variant == "gpu" ? "Graphics" :
+                                                    variant == "ram" ? "Memory" :
+                                                    "Storage"} :xalign 0))
+        (chip :status status))
+      (children))))
+
+(defwidget stat-tile [label value icon]
+  (box :class "stat-tile" :orientation "v" :space-evenly false :spacing 2
+    (box :orientation "h" :space-evenly false :spacing 5
+      (label :class "stat-tile-icon" :text icon)
+      (label :class "stat-tile-label" :text label :xalign 0 :hexpand true))
+    (label :class "stat-tile-value" :text value :xalign 0)))
+
+(defwidget meter [label value pct status]
+  (box :class "meter" :orientation "v" :space-evenly false :spacing 4
+    (box :orientation "h" :space-evenly false
+      (label :class "meter-label" :text label :xalign 0 :hexpand true)
+      (label :class "meter-value" :text value :xalign 1))
+    (overlay
+      (box :class "meter-track")
+      (box :class "meter-fill meter-${status}" :hexpand false
+           :style "min-width: ${pct >= 100 ? 100 : pct < 1 ? 1 : pct}%;"))))
+
+(defwidget core-bar [pct]
+  (box :class "core-bar core-bar-${pct >= 80 ? 'hot' : pct >= 50 ? 'mid' : 'cool'}"
+       :orientation "v" :space-evenly false :valign "end"
+    (box :class "core-bar-fill" :vexpand false
+         :style "min-height: ${pct >= 1 ? pct >= 100 ? 50 : pct / 2 + 2 : 1}px;")))
+
+(defwidget section-title [text]
+  (label :class "section-title" :text text :xalign 0))
+
+;; ── CPU dropdown ─────────────────────────────
+(defwindow cpu-dropdown
+  :monitor 0
+  :geometry (geometry :x "8px" :y "42px" :width "460px" :anchor "top right")
+  :stacking "ov"
+  :focusable false
+  :exclusive false
+  :namespace "hypr-os-dropdown"
+  (dropdown-shell :variant "cpu"
+                  :icon ""
+                  :title {cpu.model ?: "CPU"}
+                  :status {cpu.status ?: "loading"}
+    (box :orientation "v" :space-evenly false :spacing 12
+      (box :class "stat-grid" :orientation "h" :space-evenly true :spacing 8
+        (stat-tile :icon ""  :label "Usage" :value "${cpu.usage_pct ?: 0}%")
+        (stat-tile :icon ""  :label "Temp"  :value "${cpu.temp_c ?: 0}°C")
+        (stat-tile :icon ""  :label "Freq"  :value "${cpu.freq_mhz ?: 0} MHz")
+        (stat-tile :icon ""  :label "Cores" :value "${cpu.cores_count ?: 0}"))
+      (section-title :text "PER-CORE LOAD")
+      (box :class "core-grid" :orientation "h" :space-evenly true :spacing 2 :height 56
+        (for c in {cpu.cores ?: "[]"}
+          (core-bar :pct {c})))
+      (section-title :text "USAGE OVER TIME")
+      (graph :class "graph graph-cpu" :value {cpu.usage_pct ?: 0}
+             :time-range "60s" :max 100 :min 0 :dynamic false
+             :thickness 2 :line-style "round" :height 70))))
+
+;; ── GPU dropdown ─────────────────────────────
+(defwindow gpu-dropdown
+  :monitor 0
+  :geometry (geometry :x "8px" :y "42px" :width "460px" :anchor "top right")
+  :stacking "ov"
+  :focusable false
+  :exclusive false
+  :namespace "hypr-os-dropdown"
+  (dropdown-shell :variant "gpu"
+                  :icon ""
+                  :title {gpu.name ?: "GPU"}
+                  :status {gpu.status ?: "loading"}
+    (box :orientation "v" :space-evenly false :spacing 12
+      (box :class "stat-grid" :orientation "h" :space-evenly true :spacing 8
+        (stat-tile :icon ""  :label "GPU"   :value "${gpu.util_pct ?: 0}%")
+        (stat-tile :icon ""  :label "Temp"  :value "${gpu.temp_c ?: 0}°C")
+        (stat-tile :icon ""  :label "Power" :value "${gpu.power_w ?: 0} W")
+        (stat-tile :icon ""  :label "Fan"   :value "${gpu.fan_pct ?: 0}%"))
+      (section-title :text "VRAM")
+      (meter :label "Memory used"
+             :value "${gpu.mem_used_mib ?: 0} / ${gpu.mem_total_mib ?: 0} MiB"
+             :pct {gpu.mem_pct ?: 0}
+             :status {gpu.status ?: "ok"})
+      (box :class "stat-grid" :orientation "h" :space-evenly true :spacing 8
+        (stat-tile :icon ""  :label "GPU clock" :value "${gpu.clock_gfx_mhz ?: 0} MHz")
+        (stat-tile :icon ""  :label "Mem clock" :value "${gpu.clock_mem_mhz ?: 0} MHz"))
+      (section-title :text "GPU UTILIZATION")
+      (graph :class "graph graph-gpu" :value {gpu.util_pct ?: 0}
+             :time-range "60s" :max 100 :min 0 :dynamic false
+             :thickness 2 :line-style "round" :height 70))))
+
+;; ── RAM dropdown ─────────────────────────────
+(defwindow ram-dropdown
+  :monitor 0
+  :geometry (geometry :x "8px" :y "42px" :width "440px" :anchor "top right")
+  :stacking "ov"
+  :focusable false
+  :exclusive false
+  :namespace "hypr-os-dropdown"
+  (dropdown-shell :variant "ram"
+                  :icon "󰍛"
+                  :title "Memory"
+                  :status {ram.status ?: "loading"}
+    (box :orientation "v" :space-evenly false :spacing 12
+      (box :class "stat-grid" :orientation "h" :space-evenly true :spacing 8
+        (stat-tile :icon ""  :label "Used"  :value "${ram.used_gb ?: 0} GiB")
+        (stat-tile :icon ""  :label "Free"  :value "${ram.available_gb ?: 0} GiB")
+        (stat-tile :icon ""  :label "Cache" :value "${ram.cached_gb ?: 0} GiB")
+        (stat-tile :icon ""  :label "Total" :value "${ram.total_gb ?: 0} GiB"))
+      (section-title :text "MEMORY")
+      (meter :label "RAM"
+             :value "${ram.used_pct ?: 0}%"
+             :pct {ram.used_pct ?: 0}
+             :status {ram.status ?: "ok"})
+      (meter :label "Swap"
+             :value "${ram.swap_used_gb ?: 0} / ${ram.swap_total_gb ?: 0} GiB"
+             :pct {ram.swap_pct ?: 0}
+             :status "ok")
+      (section-title :text "USAGE OVER TIME")
+      (graph :class "graph graph-ram" :value {ram.used_pct ?: 0}
+             :time-range "60s" :max 100 :min 0 :dynamic false
+             :thickness 2 :line-style "round" :height 60))))
+
+;; ── Storage dropdown ─────────────────────────
+(defwindow storage-dropdown
+  :monitor 0
+  :geometry (geometry :x "8px" :y "42px" :width "480px" :anchor "top right")
+  :stacking "ov"
+  :focusable false
+  :exclusive false
+  :namespace "hypr-os-dropdown"
+  (dropdown-shell :variant "storage"
+                  :icon "󰋊"
+                  :title "Storage"
+                  :status {storage.status ?: "loading"}
+    (box :orientation "v" :space-evenly false :spacing 10
+      (section-title :text "MOUNTED VOLUMES")
+      (box :orientation "v" :space-evenly false :spacing 10
+        (for d in {storage.drives ?: "[]"}
+          (meter :label "${d.mount}   ${d.fstype}"
+                 :value "${d.used_gb} / ${d.size_gb} GiB"
+                 :pct {d.used_pct}
+                 :status {d.used_pct >= 90 ? "critical" : d.used_pct >= 75 ? "warm" : "ok"}))))))

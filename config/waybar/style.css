@@ -21,9 +21,10 @@ window#waybar {
 #tray,
 #network,
 #pulseaudio,
-#cpu,
-#memory,
-#temperature,
+#custom-cpu,
+#custom-gpu,
+#custom-ram,
+#custom-storage,
 #clock,
 #custom-launcher,
 #custom-terminal,
@@ -116,10 +117,19 @@ window#waybar {
 /* ── Right modules ──────────────────────── */
 #network,
 #pulseaudio,
-#cpu,
-#memory,
-#temperature {
+#custom-cpu,
+#custom-gpu,
+#custom-ram,
+#custom-storage {
     color: @fg;
+    transition: background 150ms ease, color 150ms ease;
+}
+
+#custom-cpu:hover,
+#custom-gpu:hover,
+#custom-ram:hover,
+#custom-storage:hover {
+    background: alpha(@accent, 0.18);
 }
 
 #network.disconnected {
@@ -130,8 +140,26 @@ window#waybar {
     color: @fg_dim;
 }
 
-#temperature.critical {
-    color: #fb4934;
+#custom-cpu.warm,
+#custom-gpu.warm,
+#custom-ram.warm,
+#custom-storage.warm {
+    color: #e0a955;
+}
+
+#custom-cpu.critical,
+#custom-gpu.critical,
+#custom-ram.critical,
+#custom-storage.critical {
+    color: #e06c75;
+}
+
+#custom-cpu.loading,
+#custom-gpu.loading,
+#custom-ram.loading,
+#custom-storage.loading,
+#custom-gpu.unavailable {
+    color: @fg_dim;
 }
 
 /* ── Clock ──────────────────────────────── */
@@ -140,14 +168,18 @@ window#waybar {
     font-weight: bold;
 }
 
-/* ── Tooltip ────────────────────────────── */
+/* ── Tooltip (rich pango dropdowns) ────── */
 tooltip {
-    background: @bg_dim;
-    border: 1px solid @accent_dim;
-    border-radius: 8px;
+    background: alpha(@bg, 0.96);
+    border: 1px solid alpha(@accent_dim, 0.6);
+    border-radius: 10px;
     color: @fg;
+    padding: 0;
 }
 
 tooltip label {
     color: @fg;
+    padding: 14px 18px;
+    font-family: "Iosevka Nerd Font";
+    font-size: 15px;
 }

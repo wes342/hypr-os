@@ -1,0 +1,187 @@
+@import url("colors.css");
+
+* {
+    font-family: "Iosevka Nerd Font", "Inter", sans-serif;
+    font-size: 13px;
+}
+
+/* ── Always-visible bar ─────────────────────── */
+.metrics-bar {
+    background-color: alpha(@bg, 0.85);
+    color: @fg;
+    border: 1px solid alpha(@accent_dim, 0.4);
+    border-radius: 10px;
+    padding: 0 6px;
+    min-height: 30px;
+}
+
+.bar-icon {
+    padding: 0 8px;
+    margin: 3px 0;
+    border-radius: 6px;
+    transition: background-color 120ms ease, color 120ms ease;
+}
+
+.bar-icon:hover {
+    background-color: alpha(@accent, 0.18);
+}
+
+.bar-icon-glyph {
+    font-size: 14px;
+    color: @fg;
+}
+
+.bar-icon-value {
+    color: @fg;
+    font-weight: 500;
+}
+
+.bar-icon-warm     .bar-icon-glyph,
+.bar-icon-warm     .bar-icon-value     { color: @warm; }
+.bar-icon-critical .bar-icon-glyph,
+.bar-icon-critical .bar-icon-value     { color: @critical; }
+.bar-icon-loading  .bar-icon-glyph,
+.bar-icon-loading  .bar-icon-value,
+.bar-icon-unavailable .bar-icon-glyph,
+.bar-icon-unavailable .bar-icon-value  { color: @fg_dim; }
+
+/* ── Dropdown shell ─────────────────────────── */
+.dropdown {
+    background-color: alpha(@bg, 0.96);
+    color: @fg;
+    border: 1px solid alpha(@accent_dim, 0.55);
+    border-radius: 14px;
+    padding: 16px 18px;
+}
+
+.dropdown-header {
+    margin-bottom: 2px;
+}
+
+.dropdown-icon {
+    font-size: 26px;
+    color: @accent;
+    padding: 0 4px 0 0;
+}
+
+.dropdown-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: @fg;
+}
+
+.dropdown-subtitle {
+    font-size: 10px;
+    color: @fg_dim;
+    letter-spacing: 0.08em;
+}
+
+/* ── Status chips ───────────────────────────── */
+.chip {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.07em;
+}
+.chip-ok          { color: @bg; background-color: @ok; }
+.chip-warm        { color: @bg; background-color: @warm; }
+.chip-critical    { color: @fg; background-color: @critical; }
+.chip-loading,
+.chip-unavailable { color: @fg_dim; background-color: alpha(@bg_highlight, 0.7); }
+
+/* ── Section titles ─────────────────────────── */
+.section-title {
+    color: @fg_dim;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    margin-top: 4px;
+    margin-bottom: 2px;
+}
+
+/* ── Stat tiles (4-column grid) ─────────────── */
+.stat-grid {
+    background-color: alpha(@bg_highlight, 0.5);
+    border-radius: 10px;
+    padding: 12px 10px;
+}
+
+.stat-tile {
+    padding: 0 6px;
+}
+
+.stat-tile-icon {
+    font-size: 11px;
+    color: @accent;
+}
+
+.stat-tile-label {
+    color: @fg_dim;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+}
+
+.stat-tile-value {
+    color: @fg;
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: 1px;
+}
+
+/* ── Meters (horizontal usage bars, overlay) ── */
+.meter-label {
+    color: @fg;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.meter-value {
+    color: @fg_dim;
+    font-size: 11px;
+}
+
+.meter-track {
+    background-color: alpha(@bg_highlight, 0.7);
+    border-radius: 6px;
+    min-height: 8px;
+    min-width: 380px;
+}
+
+.meter-fill {
+    background-color: @accent;
+    border-radius: 6px;
+    min-height: 8px;
+}
+
+.meter-warm     { background-color: @warm; }
+.meter-critical { background-color: @critical; }
+
+/* ── Per-core grid ──────────────────────────── */
+.core-grid {
+    background-color: alpha(@bg_highlight, 0.5);
+    border-radius: 10px;
+    padding: 6px 8px;
+}
+
+.core-bar {
+    min-width: 8px;
+}
+
+.core-bar-fill {
+    background-color: @accent_dim;
+    border-radius: 3px;
+    min-width: 6px;
+}
+
+.core-bar-cool .core-bar-fill { background-color: @accent_dim; }
+.core-bar-mid  .core-bar-fill { background-color: @accent; }
+.core-bar-hot  .core-bar-fill { background-color: @critical; }
+
+/* ── Live graph ─────────────────────────────── */
+.graph {
+    background-color: alpha(@bg_highlight, 0.5);
+    border-radius: 10px;
+    padding: 8px;
+    color: @accent;
+}
