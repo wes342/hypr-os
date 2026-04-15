@@ -52,7 +52,7 @@ PACMAN_PKGS=(
     imagemagick jq python curl bc
 
     # Clipboard and screenshotting
-    wl-clipboard cliphist grim slurp
+    wl-clipboard cliphist grim slurp satty
 
     # Shell niceties (install.sh wires these into bashrc)
     starship zoxide fastfetch
