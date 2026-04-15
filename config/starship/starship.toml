@@ -1,43 +1,64 @@
 # hypr-os starship prompt
 #
-# All colors use the 16 ANSI slots so the prompt automatically follows
-# the terminal palette (kitty / ghostty / alacritty all get the same
-# palette from theme.sh). No prompt-specific regen needed.
+# Powerline-style segments. All colors use ANSI names so the prompt
+# automatically follows whatever palette kitty / ghostty / alacritty
+# has been themed with via scripts/theme.sh.
 
 add_newline = true
 
 format = """
-[╭─](bright-black)\
-[](fg:magenta)\
-[  ](bg:magenta fg:black)\
-[](bg:bright-black fg:magenta)\
+[ ](fg:bright-magenta)\
+$os\
+$username\
+[](fg:bright-magenta bg:blue)\
 $directory\
-[](fg:bright-black bg:black)\
+[](fg:blue bg:green)\
 $git_branch\
 $git_status\
-[](fg:black)\
-$fill\
+[](fg:green bg:yellow)\
 $python$nodejs$rust$golang\
+[](fg:yellow bg:red)\
 $cmd_duration\
+[](fg:red)\
+$fill\
+$time\
 $line_break\
-[╰─](bright-black)\
 $character"""
 
 [fill]
 symbol = " "
 
 [character]
-success_symbol = "[](bold cyan)[ ❯](bold green)"
-error_symbol   = "[](bold red)[ ❯](bold red)"
-vimcmd_symbol  = "[](bold yellow)[ ❮](bold yellow)"
+success_symbol = "[❯](bold green)"
+error_symbol   = "[❯](bold red)"
+vimcmd_symbol  = "[❮](bold yellow)"
+
+[os]
+disabled = false
+style = "bg:bright-magenta fg:black bold"
+format = "[ $symbol ]($style)"
+
+[os.symbols]
+Arch        = "󰣇"
+Macos       = ""
+Linux       = ""
+Ubuntu      = ""
+Fedora      = ""
+Debian      = ""
+
+[username]
+show_always = true
+style_user  = "bg:bright-magenta fg:black bold"
+style_root  = "bg:red fg:black bold"
+format      = "[ $user ]($style)"
 
 [directory]
-style              = "bg:bright-black fg:white bold"
-format             = "[ $path ]($style)"
+style              = "bg:blue fg:black bold"
+format             = "[  $path ]($style)"
 truncation_length  = 3
 truncation_symbol  = "…/"
-read_only          = " "
-home_symbol        = " "
+read_only          = "  "
+home_symbol        = " ~"
 
 [directory.substitutions]
 "Documents" = "󰈙 "
@@ -49,46 +70,52 @@ home_symbol        = " "
 ".config"   = " "
 
 [git_branch]
-style  = "bg:black fg:magenta"
+style  = "bg:green fg:black bold"
 symbol = ""
-format = "[  $symbol $branch ]($style)"
+format = "[ $symbol $branch ]($style)"
 
 [git_status]
-style  = "bg:black fg:yellow"
-format = '[$all_status$ahead_behind ]($style)'
+style  = "bg:green fg:black"
+format = '[$all_status$ahead_behind]($style)'
 conflicted = "="
-ahead      = "⇡${count} "
-behind     = "⇣${count} "
-diverged   = "⇕⇡${ahead_count}⇣${behind_count} "
+ahead      = "⇡${count}"
+behind     = "⇣${count}"
+diverged   = "⇕⇡${ahead_count}⇣${behind_count}"
 up_to_date = ""
-untracked  = "?${count} "
-stashed    = "\\$"
-modified   = "!${count} "
-staged     = "+${count} "
-renamed    = "»${count} "
-deleted    = "✘${count} "
+untracked  = " ?${count}"
+stashed    = " \\$"
+modified   = " !${count}"
+staged     = " +${count}"
+renamed    = " »${count}"
+deleted    = " ✘${count}"
+
+[python]
+style  = "bg:yellow fg:black bold"
+symbol = ""
+format = "[ $symbol $version ]($style)"
+
+[nodejs]
+style  = "bg:yellow fg:black bold"
+symbol = ""
+format = "[ $symbol $version ]($style)"
+
+[rust]
+style  = "bg:yellow fg:black bold"
+symbol = ""
+format = "[ $symbol $version ]($style)"
+
+[golang]
+style  = "bg:yellow fg:black bold"
+symbol = ""
+format = "[ $symbol $version ]($style)"
 
 [cmd_duration]
 min_time = 1500
-style    = "fg:yellow"
-format   = "[ 󰔛 $duration]($style)"
+style    = "bg:red fg:black bold"
+format   = "[ 󰔛 $duration ]($style)"
 
-[python]
-style  = "fg:yellow"
-symbol = " "
-format = "[ $symbol($version) ]($style)"
-
-[nodejs]
-style  = "fg:green"
-symbol = " "
-format = "[ $symbol($version) ]($style)"
-
-[rust]
-style  = "fg:red"
-symbol = " "
-format = "[ $symbol($version) ]($style)"
-
-[golang]
-style  = "fg:cyan"
-symbol = " "
-format = "[ $symbol($version) ]($style)"
+[time]
+disabled = false
+style  = "fg:bright-black"
+format = "[ $time ]($style)"
+time_format = "%H:%M"

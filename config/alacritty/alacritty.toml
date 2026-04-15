@@ -18,15 +18,15 @@ dynamic_padding  = true
 size = 12
 
 [font.normal]
-family = "Iosevka Nerd Font"
+family = "Iosevka Nerd Font Mono"
 style  = "Regular"
 
 [font.bold]
-family = "Iosevka Nerd Font"
+family = "Iosevka Nerd Font Mono"
 style  = "Bold"
 
 [font.italic]
-family = "Iosevka Nerd Font"
+family = "Iosevka Nerd Font Mono"
 style  = "Italic"
 
 [cursor]
