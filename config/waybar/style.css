@@ -25,6 +25,7 @@ window#waybar {
 #custom-gpu,
 #custom-ram,
 #custom-storage,
+#custom-power,
 #clock,
 #custom-launcher,
 #custom-terminal,
@@ -160,6 +161,20 @@ window#waybar {
 #custom-storage.loading,
 #custom-gpu.unavailable {
     color: @fg_dim;
+}
+
+/* ── Power button (far right) ───────────── */
+#custom-power {
+    color: @fg_dim;
+    font-size: 14px;
+    margin-right: 6px;
+    padding: 0 10px;
+    transition: background 150ms ease, color 150ms ease;
+}
+
+#custom-power:hover {
+    color: #e06c75;
+    background: alpha(#e06c75, 0.18);
 }
 
 /* ── Clock ──────────────────────────────── */

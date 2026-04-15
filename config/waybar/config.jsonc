@@ -25,7 +25,8 @@
         "custom/cpu",
         "custom/gpu",
         "custom/ram",
-        "custom/storage"
+        "custom/storage",
+        "custom/power"
     ],
     "custom/launcher": {
         "format": "",
@@ -158,6 +159,13 @@
         "interval": 5,
         "tooltip": true,
         "on-click": "thunar"
+    },
+    "custom/power": {
+        "format": "⏻",
+        "tooltip": "Power menu",
+        "on-click": "~/.config/hypr/scripts/powermenu.sh",
+        "exec": "echo ok",
+        "interval": 3600
     },
     "custom/clock": {
         "format": "{}",

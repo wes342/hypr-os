@@ -1,0 +1,70 @@
+/*
+ * Power menu theme -- list-style, compact, matches dynamic colors.
+ */
+
+@import "colors.rasi"
+
+configuration {
+    show-icons:         false;
+    font:               "Iosevka Nerd Font 13";
+}
+
+* {
+    background-color:   @bg;
+    text-color:         @fg;
+}
+
+window {
+    border-radius:      12px;
+    width:              320px;
+    padding:            20px;
+    border:             2px solid;
+    border-color:       @accent-dim;
+    location:           center;
+}
+
+mainbox {
+    children:           [ inputbar, listview ];
+    spacing:            12px;
+}
+
+inputbar {
+    children:           [ prompt ];
+    background-color:   @bg-highlight;
+    border-radius:      8px;
+    padding:            10px 14px;
+}
+
+prompt {
+    background-color:   inherit;
+    text-color:         @accent;
+    font:               "Iosevka Nerd Font Bold 13";
+}
+
+listview {
+    columns:            1;
+    lines:              6;
+    cycle:              true;
+    dynamic:            false;
+    scrollbar:          false;
+    spacing:            4px;
+}
+
+element {
+    orientation:        horizontal;
+    padding:            10px 14px;
+    border-radius:      6px;
+    spacing:            14px;
+}
+
+element-text {
+    background-color:   inherit;
+    text-color:         inherit;
+    vertical-align:     0.5;
+}
+
+element selected {
+    background-color:   @bg-highlight;
+    border:             1px solid;
+    border-color:       @accent;
+}
