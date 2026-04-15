@@ -1,6 +1,5 @@
 /*
- * Wallpaper browser -- 4x2 grid of large thumbnails.
- * Picks up current palette from colors.rasi so it re-themes.
+ * Wallpaper browser -- 4x2 grid, square tiles.
  */
 
 @import "colors.rasi"
@@ -17,8 +16,8 @@ configuration {
 
 window {
     border-radius:      14px;
-    width:              80%;
-    height:             82%;
+    width:              55%;
+    height:             68%;
     padding:            10px;
     border:             2px solid;
     border-color:       @accent-dim;
@@ -56,23 +55,26 @@ listview {
     cycle:              true;
     dynamic:            false;
     layout:             vertical;
-    spacing:            10px;
+    spacing:            8px;
     scrollbar:          false;
     fixed-height:       true;
     fixed-columns:      true;
     flow:               horizontal;
 }
 
+/* Normal tile: no border, tight padding so icon fills. */
 element {
     orientation:        vertical;
-    padding:            6px;
-    spacing:            4px;
+    padding:            4px;
+    spacing:            2px;
     border-radius:      10px;
+    border:             2px solid;
+    border-color:       transparent;
     cursor:             pointer;
 }
 
 element-icon {
-    size:               300px;
+    size:               240px;
     horizontal-align:   0.5;
     vertical-align:     0.5;
     border-radius:      8px;
@@ -83,6 +85,7 @@ element-text {
     horizontal-align:   0.5;
     vertical-align:     0.5;
     font:               "Iosevka Nerd Font 10";
+    padding:            2px 0 0 0;
 }
 
 element-text, element-icon {
@@ -90,8 +93,20 @@ element-text, element-icon {
     text-color:         inherit;
 }
 
-element selected {
+/* Hovered / keyboard-selected -- subtle fill, no border shift. */
+element selected.normal {
     background-color:   @bg-highlight;
-    border:             2px solid;
+    border-color:       @accent-dim;
+}
+
+/* "active" is set programmatically by the script for the last-applied
+   wallpaper so you can see which one is currently in use. */
+element active {
     border-color:       @accent;
+    background-color:   @bg-highlight;
+}
+
+element selected.active {
+    border-color:       @accent;
+    background-color:   @bg;
 }

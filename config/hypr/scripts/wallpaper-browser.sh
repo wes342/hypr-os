@@ -13,8 +13,10 @@ WALL_DIR="$HOME/Pictures/Wallpaper"
 CACHE_DIR="$HOME/.cache/hypr-os/thumbs"
 STATE_FILE="$HOME/.cache/hypr-os/wallpaper-browser.state"
 THEME_RASI="$HOME/.config/rofi/wallpaper-browser.rasi"
-THUMB_W=480
-THUMB_H=270
+# Rofi's element-icon is square, so square thumbs fill the tile with no
+# letterboxing. We center-crop the source to keep the subject visible.
+THUMB_W=400
+THUMB_H=400
 
 mkdir -p "$CACHE_DIR" "$(dirname "$STATE_FILE")"
 
@@ -35,6 +37,8 @@ make_thumb() {
     echo "$thumb"
 }
 
+CURRENT_INDEX=""
+
 build_entries() {
     shopt -s nullglob nocaseglob
     local files=( "$WALL_DIR"/*.{jpg,jpeg,png,webp} )
@@ -45,11 +49,19 @@ build_entries() {
         return
     fi
 
+    local current=""
+    [[ -f "$HOME/.cache/hypr/current_wallpaper" ]] && \
+        current=$(cat "$HOME/.cache/hypr/current_wallpaper")
+
+    CURRENT_INDEX=""
+    local i=0
     for f in "${files[@]}"; do
         local thumb name
-        thumb=$(make_thumb "$f") || continue
+        thumb=$(make_thumb "$f") || { i=$((i+1)); continue; }
         name=$(basename "$f")
+        [[ "$f" == "$current" ]] && CURRENT_INDEX="$i"
         printf '%s\0icon\x1f%s\n' "${name%.*}" "$thumb"
+        i=$((i+1))
     done
 }
 
@@ -85,21 +97,27 @@ apply_wallpaper() {
 while true; do
     STATE=$(cat "$STATE_FILE")
     if [[ "$STATE" == "on" ]]; then
-        PROMPT="Wallpaper  [󰄲 theme]   Alt+t: toggle"
+        PROMPT="[✓ re-theme]  Alt+t"
     else
-        PROMPT="Wallpaper  [󰄮 theme]   Alt+t: toggle"
+        PROMPT="[ ] re-theme   Alt+t"
     fi
 
     # -kb-custom-1 Alt+t  → exits with code 10 when Alt+T is pressed.
     # Tab is reserved by rofi for row-tab, so we pick a free combo.
+    # -a <idx> marks the currently-applied wallpaper with the "active" style.
+    ENTRIES=$(build_entries)
+    ACTIVE_ARGS=()
+    [[ -n "$CURRENT_INDEX" ]] && ACTIVE_ARGS=( -a "$CURRENT_INDEX" )
+
     set +e
-    CHOICE=$(build_entries | rofi -dmenu -i \
+    CHOICE=$(printf '%s\n' "$ENTRIES" | rofi -dmenu -i \
         -theme "$THEME_RASI" \
         -p "$PROMPT" \
         -format 's' \
         -matching fuzzy \
         -kb-custom-1 "Alt+t" \
-        -kb-accept-entry "Return")
+        -kb-accept-entry "Return" \
+        "${ACTIVE_ARGS[@]}")
     RC=$?
     set -e
 
