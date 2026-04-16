@@ -30,6 +30,15 @@ if ! command -v sddm &>/dev/null; then
     exit 1
 fi
 
+# SDDM runs as the 'sddm' system user, which needs to traverse the
+# user's home directory to reach the symlinked theme + wallpaper images.
+# 711 allows traversal (cd through) without listing contents.
+HOME_DIR=$(eval echo "~$USER")
+if [[ $(stat -c '%a' "$HOME_DIR") == "700" ]]; then
+    info "Setting $HOME_DIR to 711 so SDDM can traverse the symlink"
+    chmod 711 "$HOME_DIR"
+fi
+
 info "Linking $THEME_SRC -> $THEME_DEST"
 sudo rm -rf "$THEME_DEST"
 sudo ln -s "$THEME_SRC" "$THEME_DEST"
