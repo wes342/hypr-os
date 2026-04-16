@@ -15,13 +15,28 @@ INTERVAL="${INTERVAL:-2}"
 HIST_LEN=40
 mkdir -p "$OUT" "$STATE" "$HIST_DIR"
 
-# Pango status palette (kept fixed so they remain readable across themes)
+# Status colors (semantic — fixed so ok/warm/critical are always
+# instantly readable regardless of wallpaper palette).
 COLOR_OK="#7daf5a"
 COLOR_WARM="#e0a955"
 COLOR_CRIT="#e06c75"
 COLOR_DIM="#7a8390"
 COLOR_RULE="#3a4350"
-COLOR_BAR="#5fa8d3"
+
+# Theme-aware colors -- refreshed every tick from the waybar colors.css.
+COLOR_BAR="#5fa8d3"       # overwritten by read_theme()
+COLOR_ACCENT_DIM="#222258" # overwritten by read_theme()
+
+read_theme() {
+    local css="$HOME/.config/waybar/colors.css"
+    [[ -r "$css" ]] || return
+    local v
+    v=$(grep -oP '@define-color\s+accent\s+#\K[0-9a-fA-F]{6}' "$css" | head -1)
+    [[ -n "$v" ]] && COLOR_BAR="#$v"
+    v=$(grep -oP '@define-color\s+accent_dim\s+#\K[0-9a-fA-F]{6}' "$css" | head -1)
+    [[ -n "$v" ]] && COLOR_ACCENT_DIM="#$v"
+}
+read_theme
 
 # ── Discover CPU temperature source (coretemp Package id 0) ──
 CPU_TEMP_FILE=""
@@ -206,22 +221,25 @@ collect_cpu() {
     local core_spark; core_spark=$(sparkline "$cores_csv")
     local hist_spark; hist_spark=$(sparkline "$hist_csv")
 
-    # Pango tooltip (use real newlines; jq encodes them as \n)
+    local temp_color; temp_color=$(bar_color_for "$status")
+
+    # Pango tooltip: giant temp up top, then metrics grid
     local tt=""
-    tt+=" <b>${CPU_MODEL}</b>   $(status_chip "$status")"$'\n'
+    tt+="  <span size=\"large\" foreground=\"$COLOR_BAR\"></span>  <b>${CPU_MODEL}</b>   $(status_chip "$status")"$'\n'
     tt+=" $(rule)"$'\n'
     tt+=$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">Usage</span>      <b>%3d%%</b>   <tt><span foreground=\"%s\">%s</span></tt>" \
+    tt+=$(printf "     <span size=\"xx-large\" foreground=\"%s\"><b>󰔐 %d°C</b></span>" "$temp_color" "$temp")$'\n'
+    tt+=$'\n'
+    tt+=$(printf "  <span foreground=\"%s\">󰓅 Usage</span>      <b>%3d%%</b>   <tt><span foreground=\"%s\">%s</span></tt>" \
         "$COLOR_DIM" "$usage" "$bar_color" "$usage_bar")$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">Temp</span>       <b>%3d°C</b>" "$COLOR_DIM" "$temp")$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">Frequency</span>  <b>%d MHz</b>" "$COLOR_DIM" "$freq")$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">Cores</span>      <b>%d</b>" "$COLOR_DIM" "$nproc_count")$'\n'
+    tt+=$(printf "  <span foreground=\"%s\">󰾆 Frequency</span>  <b>%d MHz</b>" "$COLOR_DIM" "$freq")$'\n'
+    tt+=$(printf "  <span foreground=\"%s\">󰍛 Cores</span>      <b>%d</b>" "$COLOR_DIM" "$nproc_count")$'\n'
     tt+=$'\n'
-    tt+=" <b>Per-core load</b>"$'\n'
-    tt+="  <tt><span foreground=\"$COLOR_BAR\">${core_spark}</span></tt>"$'\n'
+    tt+=" <b>󰟀 Per-core load</b>"$'\n'
+    tt+="  <tt><span foreground=\"$COLOR_BAR\" size=\"large\">${core_spark}</span></tt>"$'\n'
     tt+=$'\n'
-    tt+=" <b>Usage history</b>"$'\n'
-    tt+="  <tt><span foreground=\"$COLOR_BAR\">${hist_spark}</span></tt>"
+    tt+=" <b>󰀫 Usage history</b>"$'\n'
+    tt+="  <tt><span foreground=\"$COLOR_BAR\" size=\"large\">${hist_spark}</span></tt>"
 
     local wb_text=" ${temp}°"
     emit_module "cpu" "$wb_text" "$tt" "$status"
@@ -267,26 +285,30 @@ collect_gpu() {
     local mem_bar;  mem_bar=$(hbar "$mem_pct" 16)
     local hist_spark; hist_spark=$(sparkline "$hist_csv")
 
+    local temp_color; temp_color=$(bar_color_for "$status")
+
     local tt=""
-    tt+=" <b>${name}</b>   $(status_chip "$status")"$'\n'
+    tt+="  <span size=\"large\" foreground=\"$COLOR_BAR\">󰢮</span>  <b>${name}</b>   $(status_chip "$status")"$'\n'
     tt+=" $(rule)"$'\n'
     tt+=$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">GPU Usage</span>  <b>%3d%%</b>   <tt><span foreground=\"%s\">%s</span></tt>" \
+    tt+=$(printf "     <span size=\"xx-large\" foreground=\"%s\"><b>󰔐 %d°C</b></span>" "$temp_color" "$temp")$'\n'
+    tt+=$'\n'
+    tt+=$(printf "  <span foreground=\"%s\">󰾲 GPU Usage</span>  <b>%3d%%</b>   <tt><span foreground=\"%s\">%s</span></tt>" \
         "$COLOR_DIM" "$util" "$bar_color" "$util_bar")$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">Temp</span>       <b>%3d°C</b>" "$COLOR_DIM" "$temp")$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">Power</span>      <b>%d W</b>" "$COLOR_DIM" "$power_int")$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">Fan</span>        <b>%d%%</b>" "$COLOR_DIM" "$fan")$'\n'
+    tt+=$(printf "  <span foreground=\"%s\">󱐋 Power</span>      <b>%d W</b>" "$COLOR_DIM" "$power_int")$'\n'
+    tt+=$(printf "  <span foreground=\"%s\">󰈐 Fan</span>        <b>%d%%</b>" "$COLOR_DIM" "$fan")$'\n'
     tt+=$'\n'
-    tt+=" <b>VRAM</b>"$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">Used</span>       <b>%d</b> / %d MiB  (%d%%)" \
+    tt+=" <b>󰍛 VRAM</b>"$'\n'
+    tt+=$(printf "  <span foreground=\"%s\">Used</span>      <b>%d</b> / %d MiB  (%d%%)" \
         "$COLOR_DIM" "$mem_used" "$mem_total" "$mem_pct")$'\n'
-    tt+="  <tt><span foreground=\"$COLOR_BAR\">${mem_bar}</span></tt>"$'\n'
+    tt+="  <tt><span foreground=\"$COLOR_BAR\" size=\"large\">${mem_bar}</span></tt>"$'\n'
     tt+=$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">GPU clock</span>  <b>%d MHz</b>" "$COLOR_DIM" "$clk_gfx")$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">Mem clock</span>  <b>%d MHz</b>" "$COLOR_DIM" "$clk_mem")$'\n'
+    tt+=" <b>󰓅 Clocks</b>"$'\n'
+    tt+=$(printf "  <span foreground=\"%s\">GPU</span>       <b>%d MHz</b>" "$COLOR_DIM" "$clk_gfx")$'\n'
+    tt+=$(printf "  <span foreground=\"%s\">Memory</span>    <b>%d MHz</b>" "$COLOR_DIM" "$clk_mem")$'\n'
     tt+=$'\n'
-    tt+=" <b>Utilization history</b>"$'\n'
-    tt+="  <tt><span foreground=\"$COLOR_BAR\">${hist_spark}</span></tt>"
+    tt+=" <b>󰀫 Utilization history</b>"$'\n'
+    tt+="  <tt><span foreground=\"$COLOR_BAR\" size=\"large\">${hist_spark}</span></tt>"
 
     local wb_text=" ${temp}°"
     emit_module "gpu" "$wb_text" "$tt" "$status"
@@ -340,22 +362,23 @@ collect_ram() {
     local hist_spark; hist_spark=$(sparkline "$hist_csv")
 
     local tt=""
-    tt+=" <b>Memory</b>   $(status_chip "$status")"$'\n'
+    tt+="  <span size=\"large\" foreground=\"$COLOR_BAR\">󰘚</span>  <b>Memory</b>   $(status_chip "$status")"$'\n'
     tt+=" $(rule)"$'\n'
     tt+=$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">Used</span>       <b>%s</b> GiB" "$COLOR_DIM" "$used_gb")$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">Available</span>  <b>%s</b> GiB" "$COLOR_DIM" "$available_gb")$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">Cached</span>     <b>%s</b> GiB" "$COLOR_DIM" "$cached_gb")$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">Total</span>      <b>%s</b> GiB" "$COLOR_DIM" "$total_gb")$'\n'
+    tt+=$(printf "     <span size=\"xx-large\" foreground=\"%s\"><b>%s</b></span>  <span foreground=\"%s\">/ %s GiB</span>" \
+        "$bar_color" "$used_gb" "$COLOR_DIM" "$total_gb")$'\n'
     tt+=$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">RAM</span>        <b>%d%%</b>" "$COLOR_DIM" "$used_pct")$'\n'
-    tt+="  <tt><span foreground=\"$bar_color\">${ram_bar}</span></tt>"$'\n'
-    tt+=$(printf "  <span foreground=\"%s\">Swap</span>       <b>%s</b> / %s GiB (%d%%)" \
+    tt+=$(printf "  <span foreground=\"%s\">󰧮 Used</span>       <b>%s</b> GiB  (<b>%d%%</b>)" "$COLOR_DIM" "$used_gb" "$used_pct")$'\n'
+    tt+="  <tt><span foreground=\"$bar_color\" size=\"large\">${ram_bar}</span></tt>"$'\n'
+    tt+=$(printf "  <span foreground=\"%s\">󰋼 Available</span>  <b>%s</b> GiB" "$COLOR_DIM" "$available_gb")$'\n'
+    tt+=$(printf "  <span foreground=\"%s\">󰆮 Cached</span>     <b>%s</b> GiB" "$COLOR_DIM" "$cached_gb")$'\n'
+    tt+=$'\n'
+    tt+=$(printf "  <span foreground=\"%s\">󰆦 Swap</span>       <b>%s</b> / %s GiB  (<b>%d%%</b>)" \
         "$COLOR_DIM" "$swap_used_gb" "$swap_total_gb" "$swap_pct")$'\n'
-    tt+="  <tt><span foreground=\"$COLOR_BAR\">${swap_bar}</span></tt>"$'\n'
+    tt+="  <tt><span foreground=\"$COLOR_BAR\" size=\"large\">${swap_bar}</span></tt>"$'\n'
     tt+=$'\n'
-    tt+=" <b>Usage history</b>"$'\n'
-    tt+="  <tt><span foreground=\"$COLOR_BAR\">${hist_spark}</span></tt>"
+    tt+=" <b>󰀫 Usage history</b>"$'\n'
+    tt+="  <tt><span foreground=\"$COLOR_BAR\" size=\"large\">${hist_spark}</span></tt>"
 
     local wb_text="󰘚 ${used_pct}%"
     emit_module "ram" "$wb_text" "$tt" "$status"
@@ -397,9 +420,14 @@ collect_storage() {
     elif (( root_pct >= 75 )); then status="warm"
     fi
 
+    local root_color; root_color=$(bar_color_for "$status")
+
     local tt=""
-    tt+=" <b>Mounted volumes</b>   $(status_chip "$status")"$'\n'
+    tt+="  <span size=\"large\" foreground=\"$COLOR_BAR\">󰋊</span>  <b>Storage</b>   $(status_chip "$status")"$'\n'
     tt+=" $(rule)"$'\n'
+    tt+=$'\n'
+    tt+=$(printf "     <span size=\"xx-large\" foreground=\"%s\"><b>%d%%</b></span>  <span foreground=\"%s\">root filesystem</span>" \
+        "$root_color" "$root_pct" "$COLOR_DIM")$'\n'
     tt+=$'\n'
     local row src mnt fstype size_gb used_gb pct_int row_status row_color row_bar
     for row in "${lines[@]}"; do
@@ -410,13 +438,12 @@ collect_storage() {
         fi
         row_color=$(bar_color_for "$row_status")
         row_bar=$(hbar "$pct_int" 18)
-        # Escape mount point and fstype just in case
         local mnt_esc fstype_esc
         mnt_esc=$(printf '%s' "$mnt" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
         fstype_esc=$(printf '%s' "$fstype" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
-        tt+=$(printf "  <b>%s</b>  <span foreground=\"%s\">%s</span>" "$mnt_esc" "$COLOR_DIM" "$fstype_esc")$'\n'
-        tt+=$(printf "  <tt><span foreground=\"%s\">%s</span></tt>  <b>%d%%</b>  <span foreground=\"%s\">%s / %s GiB</span>" \
-            "$row_color" "$row_bar" "$pct_int" "$COLOR_DIM" "$used_gb" "$size_gb")$'\n'
+        tt+=$(printf "  󰉋 <b>%s</b>   <span foreground=\"%s\">%s</span>   <b>%d%%</b>" "$mnt_esc" "$COLOR_DIM" "$fstype_esc" "$pct_int")$'\n'
+        tt+=$(printf "  <tt><span foreground=\"%s\" size=\"large\">%s</span></tt>  <span foreground=\"%s\">%s / %s GiB</span>" \
+            "$row_color" "$row_bar" "$COLOR_DIM" "$used_gb" "$size_gb")$'\n'
         tt+=$'\n'
     done
     # Trim trailing newline
@@ -434,6 +461,7 @@ COUNTER=0
 collect_cpu
 sleep 0.5
 while true; do
+    read_theme
     collect_cpu
     collect_gpu
     collect_ram
