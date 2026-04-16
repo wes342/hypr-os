@@ -49,6 +49,7 @@ rofi -dmenu \
 <tt>  Wallpaper            Super + B                   Random wallpaper + re-theme     </tt>
 <tt>  Wallpaper Browse     Super + Alt + B             Grid of all wallpapers          </tt>
 <tt>  Keybinds             Super + K                   This cheatsheet                 </tt>
+<tt>  Eye Candy            Super + Alt + E             Matrix, pipes, bonsai, etc.     </tt>
 <tt><b>─── Media ─────────────────────────────────────────────────────────────────────</b></tt>
 <tt>  Volume               Vol Keys                    Up / Down / Mute                </tt>
 <tt>  Playback             Media Keys                  Play / Next / Prev              </tt>
