@@ -22,23 +22,41 @@ mkdir -p "$CACHE_DIR" "$(dirname "$STATE_FILE")"
 
 [[ -f "$STATE_FILE" ]] || echo "on" > "$STATE_FILE"
 
-make_thumb() {
+thumb_path() {
     local src="$1"
-    local rel mtime hash thumb
+    local rel mtime hash
     rel="${src#"$WALL_DIR"/}"
     mtime=$(stat -c %Y "$src")
     # Hash the relative path so "anime/1.jpg" and "nature/1.jpg" don't
     # collide on basename alone.
     hash=$(printf '%s' "$rel" | md5sum | cut -c1-10)
-    thumb="$CACHE_DIR/${THUMB_W}x${THUMB_H}_${mtime}_${hash}.png"
-    if [[ ! -f "$thumb" ]]; then
-        # Purge any stale thumbs for this same source (different mtime).
-        rm -f "$CACHE_DIR"/*"_${hash}.png" 2>/dev/null || true
-        magick "$src" -resize "${THUMB_W}x${THUMB_H}^" \
-            -gravity center -extent "${THUMB_W}x${THUMB_H}" \
-            -strip "$thumb" 2>/dev/null || return 1
-    fi
-    echo "$thumb"
+    echo "$CACHE_DIR/${THUMB_W}x${THUMB_H}_${mtime}_${hash}.png"
+}
+
+# Generate one thumb if missing. Safe to invoke from xargs -P.
+generate_thumb() {
+    local src="$1"
+    local thumb; thumb=$(thumb_path "$src")
+    [[ -f "$thumb" ]] && return 0
+    local rel hash
+    rel="${src#"$WALL_DIR"/}"
+    hash=$(printf '%s' "$rel" | md5sum | cut -c1-10)
+    # Purge stale thumbs for this source (different mtime, same hash).
+    find "$CACHE_DIR" -maxdepth 1 -name "*_${hash}.png" -delete 2>/dev/null || true
+    magick "$src" -resize "${THUMB_W}x${THUMB_H}^" \
+        -gravity center -extent "${THUMB_W}x${THUMB_H}" \
+        -strip "$thumb" 2>/dev/null
+}
+export -f thumb_path generate_thumb
+export WALL_DIR CACHE_DIR THUMB_W THUMB_H
+
+# Generate all missing thumbs in parallel. Called in the background
+# on first open so rofi launches instantly; missing thumbnails
+# appear blank in the current session but are cached for next open.
+warm_thumbs() {
+    local jobs; jobs=$(nproc); (( jobs > 16 )) && jobs=16
+    list_wallpapers | xargs -r -d '\n' -P "$jobs" -I{} \
+        bash -c 'generate_thumb "$1"' _ {} 2>/dev/null
 }
 
 CURRENT_INDEX=""
@@ -75,20 +93,46 @@ build_entries() {
         return
     fi
 
+    # Always fire a background warmer. It's idempotent -- existing
+    # thumbs cost a stat, missing ones get generated in parallel. No
+    # noticeable wait, and the next open shows every thumbnail.
+    (warm_thumbs >/dev/null 2>&1 &)
+
     local current=""
     [[ -f "$HOME/.cache/hypr/current_wallpaper" ]] && \
         current=$(cat "$HOME/.cache/hypr/current_wallpaper")
 
     CURRENT_INDEX=""
-    local i=0
-    for f in "${FILES[@]}"; do
-        local thumb label
-        thumb=$(make_thumb "$f") || { i=$((i+1)); continue; }
-        label=$(label_for "$f")
-        [[ "$f" == "$current" ]] && CURRENT_INDEX="$i"
-        printf '%s\0icon\x1f%s\n' "$label" "$thumb"
-        i=$((i+1))
+    local i
+    for i in "${!FILES[@]}"; do
+        [[ "${FILES[$i]}" == "$current" ]] && { CURRENT_INDEX="$i"; break; }
     done
+
+    # Single Python pass: compute thumb path per file and emit the
+    # rofi dmenu line with or without \0icon\x1f. Way faster than the
+    # equivalent bash loop, which forked stat+md5sum subshells per
+    # file (98 files -> ~200 forks -> ~600ms). Python does it in ~15ms.
+    printf '%s\n' "${FILES[@]}" | python3 -c '
+import hashlib, os, sys
+wd = os.environ["WALL_DIR"]
+cd = os.environ["CACHE_DIR"]
+w, h = os.environ["THUMB_W"], os.environ["THUMB_H"]
+for line in sys.stdin:
+    full = line.rstrip("\n")
+    if not full: continue
+    try:
+        mtime = int(os.path.getmtime(full))
+    except OSError:
+        continue
+    rel = os.path.relpath(full, wd)
+    hh = hashlib.md5(rel.encode()).hexdigest()[:10]
+    thumb = f"{cd}/{w}x{h}_{mtime}_{hh}.png"
+    label = rel.rsplit(".", 1)[0]
+    if os.path.exists(thumb):
+        sys.stdout.write(f"{label}\0icon\x1f{thumb}\n")
+    else:
+        sys.stdout.write(f"{label}\n")
+'
 }
 
 resolve_file() {
