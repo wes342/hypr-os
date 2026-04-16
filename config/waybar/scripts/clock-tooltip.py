@@ -222,11 +222,13 @@ def main():
     weather = render_weather(accent, DIM, fg)
     cal_block = render_calendar(accent, accent_dim, DIM, fg)
 
-    # The tooltip label width is set by the widest line (the calendar row,
-    # ~36 mono chars). We pad the big time and date with leading spaces so
-    # they look roughly centered. Pango/GTK has no text-align for labels.
+    # The tooltip label width is set by the widest line (the calendar
+    # at size="large": 29 mono chars × ~1.2 scale ≈ 35 normal cells).
+    # Pango/GTK has no text-align for labels, so we center by
+    # prepending spaces computed against that width.
+    TOOLTIP_WIDTH = 35
     big_pad  = " " * 12
-    date_pad = " " * 4
+    date_pad = " " * max(0, (TOOLTIP_WIDTH - len(date_line)) // 2)
 
     sys.stdout.write(
         f'{big_pad}<span font_size="34pt" weight="bold" foreground="{accent}">{big_time}</span>\n'
