@@ -225,10 +225,15 @@ def main():
     # The tooltip label width is set by the widest line (the calendar
     # at size="large": 29 mono chars × ~1.2 scale ≈ 35 normal cells).
     # Pango/GTK has no text-align for labels, so we center by
-    # prepending spaces computed against that width.
+    # prepending spaces (measured at default size) computed against
+    # that width. Each span renders at its own size, but leading
+    # spaces are outside the span and sit at default size -- so we
+    # scale the content width by its font_size / default_size ratio.
     TOOLTIP_WIDTH = 35
-    big_pad  = " " * 12
-    date_pad = " " * max(0, (TOOLTIP_WIDTH - len(date_line)) // 2)
+    TIME_SCALE    = 34 / 12   # 34pt time over 12pt default
+    DATE_SCALE    = 1.2       # size="large" ≈ 120%
+    big_pad  = " " * max(0, int(round((TOOLTIP_WIDTH - len(big_time)  * TIME_SCALE) / 2)))
+    date_pad = " " * max(0, int(round((TOOLTIP_WIDTH - len(date_line) * DATE_SCALE) / 2)))
 
     sys.stdout.write(
         f'{big_pad}<span font_size="34pt" weight="bold" foreground="{accent}">{big_time}</span>\n'
