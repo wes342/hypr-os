@@ -33,7 +33,7 @@ CHOICE=$(printf '%s\n' "${EFFECTS[@]}" | rofi -dmenu -i \
 
 case "$CHOICE" in
     *Matrix*)
-        launch "Matrix" -e cmatrix -ab -C green -u 4
+        launch "Matrix" -e "$HOME/.config/hypr/scripts/matrix-run.sh"
         ;;
     *Bonsai*)
         launch "Bonsai" -e cbonsai -li -w 2
