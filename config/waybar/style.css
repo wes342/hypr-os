@@ -26,6 +26,7 @@ window#waybar {
 #custom-ram,
 #custom-storage,
 #custom-power,
+#custom-separator,
 #clock,
 #custom-launcher,
 #custom-terminal,
@@ -95,6 +96,15 @@ window#waybar {
 #window {
     color: @fg_dim;
     font-style: italic;
+}
+
+/* ── Separator ──────────────────────────── */
+#custom-separator {
+    color: @accent_dim;
+    font-size: 14px;
+    padding: 0 8px;
+    margin: 4px 0;
+    opacity: 0.5;
 }
 
 /* ── Audio visualizer ───────────────────── */

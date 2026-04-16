@@ -16,6 +16,7 @@
     ],
     "modules-center": [
         "custom/clock",
+        "custom/separator",
         "custom/cava",
         "mpris"
     ],
@@ -102,6 +103,12 @@
         "on-click": "playerctl play-pause",
         "on-scroll-up": "playerctl next",
         "on-scroll-down": "playerctl previous"
+    },
+    "custom/separator": {
+        "format": "│",
+        "tooltip": false,
+        "exec": "echo ok",
+        "interval": 3600
     },
     "custom/cava": {
         "exec": "~/.config/waybar/scripts/cava-bar.sh",
