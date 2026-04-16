@@ -20,7 +20,7 @@ if [[ -n "${1:-}" && -f "${1:-}" ]]; then
     WALLPAPER="$(realpath "$1")"
 else
     # Get all image files
-    mapfile -t WALLS < <(find "$WALLPAPER_DIR" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null)
+    mapfile -t WALLS < <(find "$WALLPAPER_DIR" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null)
 
     if [[ ${#WALLS[@]} -eq 0 ]]; then
         notify-send -t 3000 "Wallpaper" "No wallpapers found in $WALLPAPER_DIR" 2>/dev/null || true

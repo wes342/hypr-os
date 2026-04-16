@@ -24,12 +24,16 @@ mkdir -p "$CACHE_DIR" "$(dirname "$STATE_FILE")"
 
 make_thumb() {
     local src="$1"
-    local name mtime thumb
-    name=$(basename "$src")
+    local rel mtime hash thumb
+    rel="${src#"$WALL_DIR"/}"
     mtime=$(stat -c %Y "$src")
-    thumb="$CACHE_DIR/${THUMB_W}x${THUMB_H}_${mtime}_${name%.*}.png"
+    # Hash the relative path so "anime/1.jpg" and "nature/1.jpg" don't
+    # collide on basename alone.
+    hash=$(printf '%s' "$rel" | md5sum | cut -c1-10)
+    thumb="$CACHE_DIR/${THUMB_W}x${THUMB_H}_${mtime}_${hash}.png"
     if [[ ! -f "$thumb" ]]; then
-        rm -f "$CACHE_DIR"/*"_${name%.*}.png" 2>/dev/null || true
+        # Purge any stale thumbs for this same source (different mtime).
+        rm -f "$CACHE_DIR"/*"_${hash}.png" 2>/dev/null || true
         magick "$src" -resize "${THUMB_W}x${THUMB_H}^" \
             -gravity center -extent "${THUMB_W}x${THUMB_H}" \
             -strip "$thumb" 2>/dev/null || return 1
@@ -39,12 +43,34 @@ make_thumb() {
 
 CURRENT_INDEX=""
 
-build_entries() {
-    shopt -s nullglob nocaseglob
-    local files=( "$WALL_DIR"/*.{jpg,jpeg,png,webp} )
-    shopt -u nullglob nocaseglob
+# Recursively collect all image files from $WALL_DIR into the FILES array,
+# so wallpapers organized into subfolders (e.g. Wallpaper/anime,
+# Wallpaper/nature) are all picked up.
+list_wallpapers() {
+    find -L "$WALL_DIR" -type f \
+        \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) \
+        2>/dev/null | sort
+}
 
-    if [[ ${#files[@]} -eq 0 ]]; then
+# Display label: "folder/name" when nested, just "name" when at the top level.
+label_for() {
+    local path="$1" rel
+    rel="${path#"$WALL_DIR"/}"
+    if [[ "$rel" == */* ]]; then
+        # Strip extension and use "folder/basename" form.
+        local dir="${rel%/*}"
+        local base="${rel##*/}"
+        echo "$dir/${base%.*}"
+    else
+        local base="${rel##*/}"
+        echo "${base%.*}"
+    fi
+}
+
+build_entries() {
+    mapfile -t FILES < <(list_wallpapers)
+
+    if [[ ${#FILES[@]} -eq 0 ]]; then
         printf '(no wallpapers in %s)\n' "$WALL_DIR"
         return
     fi
@@ -55,28 +81,25 @@ build_entries() {
 
     CURRENT_INDEX=""
     local i=0
-    for f in "${files[@]}"; do
-        local thumb name
+    for f in "${FILES[@]}"; do
+        local thumb label
         thumb=$(make_thumb "$f") || { i=$((i+1)); continue; }
-        name=$(basename "$f")
+        label=$(label_for "$f")
         [[ "$f" == "$current" ]] && CURRENT_INDEX="$i"
-        printf '%s\0icon\x1f%s\n' "${name%.*}" "$thumb"
+        printf '%s\0icon\x1f%s\n' "$label" "$thumb"
         i=$((i+1))
     done
 }
 
 resolve_file() {
     local choice="$1"
-    shopt -s nullglob nocaseglob
-    for f in "$WALL_DIR"/*.{jpg,jpeg,png,webp}; do
-        local n; n=$(basename "$f")
-        if [[ "${n%.*}" == "$choice" ]]; then
+    local f
+    for f in $(list_wallpapers); do
+        if [[ "$(label_for "$f")" == "$choice" ]]; then
             echo "$f"
-            shopt -u nullglob nocaseglob
             return 0
         fi
     done
-    shopt -u nullglob nocaseglob
     return 1
 }
 

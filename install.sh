@@ -109,7 +109,7 @@ info "Created ~/Pictures/Wallpaper/ and ~/Pictures/Screenshots/"
 
 # ── Seed default wallpaper if user's wallpaper dir is empty ──
 if [[ -d "$CONFIG_SRC/wallpapers" ]] && \
-   [[ -z "$(find "$HOME/Pictures/Wallpaper" -maxdepth 1 -type f \
+   [[ -z "$(find "$HOME/Pictures/Wallpaper" -type f \
             \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null)" ]]; then
     info "Seeding default wallpaper into ~/Pictures/Wallpaper/"
     cp -n "$CONFIG_SRC/wallpapers/"*.{jpg,jpeg,png,webp} "$HOME/Pictures/Wallpaper/" 2>/dev/null || true
@@ -141,7 +141,7 @@ fi
 # ── Generate the initial theme so colors.css etc. exist ──
 if command -v magick &>/dev/null; then
     # Use any wallpaper we can find (including the seed we just copied)
-    SEED=$(find "$HOME/Pictures/Wallpaper" -maxdepth 1 -type f \
+    SEED=$(find "$HOME/Pictures/Wallpaper" -type f \
         \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) \
         2>/dev/null | head -1)
     if [[ -n "$SEED" ]]; then
