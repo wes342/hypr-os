@@ -68,7 +68,7 @@ PACMAN_PKGS=(
     starship zoxide fastfetch fzf bat chafa
 
     # Eye candy / terminal effects
-    cmatrix lolcat asciiquarium
+    cmatrix
 
     # Media / audio
     ncmpcpp mpd cava playerctl
@@ -112,7 +112,6 @@ AUR_PKGS=(
     nwg-dock-hyprland      # dock
     blesh-git              # ble.sh: fish-style autosuggestions for bash
     spotify-launcher       # Spotify desktop client (optional)
-    pipes.sh               # animated pipe screensaver
     cbonsai                # bonsai tree generator
     tty-clock              # terminal clock
 )

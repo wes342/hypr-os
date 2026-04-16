@@ -20,35 +20,20 @@ launch() {
 # We default to green (classic Matrix) but offer themed variants.
 
 EFFECTS=(
-    "󱊷  Matrix Rain (green)"
-    "󱊷  Matrix Rain (cyan)"
-    "󱊷  Matrix Rain (magenta)"
-    "  Pipes"
+    "󱊷  Matrix"
     "  Bonsai Tree"
     "  Clock"
-    "󰈺  Aquarium"
     "  Rain"
-    "  Cava Visualizer"
 )
 
-# Build rofi input.
 CHOICE=$(printf '%s\n' "${EFFECTS[@]}" | rofi -dmenu -i \
     -theme ~/.config/rofi/config.rasi \
     -p "Eye Candy" \
     -matching fuzzy) || exit 0
 
 case "$CHOICE" in
-    *"Matrix Rain (green)"*)
+    *Matrix*)
         launch "Matrix" -e cmatrix -ab -C green -u 4
-        ;;
-    *"Matrix Rain (cyan)"*)
-        launch "Matrix" -e cmatrix -ab -C cyan -u 4
-        ;;
-    *"Matrix Rain (magenta)"*)
-        launch "Matrix" -e cmatrix -ab -C magenta -u 4
-        ;;
-    *Pipes*)
-        launch "Pipes" -e bash -c 'pipes.sh -t 2 -R -r 0 -p 3'
         ;;
     *Bonsai*)
         launch "Bonsai" -e cbonsai -li -w 2
@@ -56,12 +41,8 @@ case "$CHOICE" in
     *Clock*)
         launch "Clock" -e tty-clock -cst -C 5
         ;;
-    *Aquarium*)
-        launch "Aquarium" -e asciiquarium
-        ;;
     *Rain*)
         launch "Rain" -e bash -c '
-            # Simple rain effect using shell
             cols=$(tput cols); lines=$(tput lines)
             chars=("," "." "│" "┃" "╎" "╏" "╵")
             tput civis; trap "tput cnorm; clear; exit" INT TERM
@@ -72,8 +53,5 @@ case "$CHOICE" in
                 sleep 0.02
             done
         '
-        ;;
-    *Cava*)
-        launch "Cava" -e cava
         ;;
 esac
