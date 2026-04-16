@@ -108,6 +108,7 @@ AUR_PKGS=(
     hyprshot               # screenshotting helper used by keybinds
     nwg-dock-hyprland      # dock
     blesh-git              # ble.sh: fish-style autosuggestions for bash
+    spotify-launcher       # Spotify desktop client (optional)
 )
 
 # ── Install ─────────────────────────────────────────────

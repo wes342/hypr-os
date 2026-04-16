@@ -16,6 +16,7 @@
     ],
     "modules-center": [
         "custom/clock",
+        "custom/cava",
         "mpris"
     ],
     "modules-right": [
@@ -98,9 +99,13 @@
             "paused": ""
         },
         "max-length": 50,
-        "ignored-players": [
-            "firefox"
-        ]
+        "on-click": "playerctl play-pause",
+        "on-scroll-up": "playerctl next",
+        "on-scroll-down": "playerctl previous"
+    },
+    "custom/cava": {
+        "exec": "~/.config/waybar/scripts/cava-bar.sh",
+        "tooltip": false
     },
     "tray": {
         "icon-size": 16,

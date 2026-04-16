@@ -97,6 +97,15 @@ window#waybar {
     font-style: italic;
 }
 
+/* ── Audio visualizer ───────────────────── */
+#custom-cava {
+    color: @accent;
+    font-size: 14px;
+    letter-spacing: 1px;
+    padding: 0 6px;
+    opacity: 0.8;
+}
+
 /* ── Media ──────────────────────────────── */
 #mpris {
     color: @accent;
