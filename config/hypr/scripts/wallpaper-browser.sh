@@ -421,7 +421,7 @@ while true; do
         both)      mode_label="📁+🌐 Both" ;;
     esac
 
-    PROMPT="$mode_label  [$theme_indicator]  Alt: l/w/t/n/p"
+    PROMPT="$mode_label  [$theme_indicator]  Alt: l/w/t"
 
     # Build entries. First row is a clickable settings/mode row.
     ENTRIES_FILE=$(mktemp)
