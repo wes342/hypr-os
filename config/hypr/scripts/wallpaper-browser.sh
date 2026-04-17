@@ -421,24 +421,23 @@ while true; do
         both)      mode_label="📁+🌐 Both" ;;
     esac
 
-    PROMPT="$mode_label  [$theme_indicator]  l/w:Alt  t:theme  s:set"
+    PROMPT="$mode_label  [$theme_indicator]  Alt: l/w/t/n/p"
 
-    # Build entries based on mode
+    # Build entries. First row is a clickable settings/mode row.
     ENTRIES_FILE=$(mktemp)
     trap 'rm -f "$ENTRIES_FILE"' EXIT
 
-    case "$MODE" in
-        local)
-            build_local_entries > "$ENTRIES_FILE"
-            ;;
-        wallhaven)
-            build_wallhaven_entries > "$ENTRIES_FILE"
-            ;;
-        both)
-            build_local_entries > "$ENTRIES_FILE"
-            build_wallhaven_entries >> "$ENTRIES_FILE"
-            ;;
-    esac
+    {
+        echo "⚙  Settings  │  Source: $MODE  │  Theme: $STATE"
+        case "$MODE" in
+            local)     build_local_entries ;;
+            wallhaven) build_wallhaven_entries ;;
+            both)      build_local_entries; build_wallhaven_entries ;;
+        esac
+    } > "$ENTRIES_FILE"
+
+    # Offset CURRENT_INDEX by 1 for the settings row
+    [[ -n "$CURRENT_INDEX" ]] && CURRENT_INDEX=$((CURRENT_INDEX + 1))
 
     ACTIVE_ARGS=()
     [[ -n "$CURRENT_INDEX" && "$MODE" != "wallhaven" ]] && ACTIVE_ARGS=( -a "$CURRENT_INDEX" )
@@ -466,6 +465,13 @@ while true; do
         0)
             # Selection made.
             [[ -z "$CHOICE" ]] && exit 0
+
+            # Settings row clicked
+            if [[ "$CHOICE" == "⚙"* ]]; then
+                run_settings
+                MODE=$(read_mode)
+                continue
+            fi
 
             SELECTED=""
             if [[ "$MODE" == "wallhaven" ]]; then
