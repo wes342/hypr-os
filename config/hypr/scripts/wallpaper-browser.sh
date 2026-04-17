@@ -198,203 +198,6 @@ apply_wallpaper() {
     fi
 }
 
-# ── Settings submenu ──
-
-SETTINGS_RASI="$HOME/.config/rofi/settings.rasi"
-
-# Read a single value from wallhaven.conf
-conf_get() {
-    grep "^$1=" "$WH_CONF" 2>/dev/null | cut -d= -f2
-}
-conf_set() {
-    sed -i "s/^$1=.*/$1=$2/" "$WH_CONF"
-}
-
-# Helper: rofi single-select from a list of options
-rofi_pick() {
-    local prompt="$1"; shift
-    printf '%s\n' "$@" | rofi -dmenu -i -theme "$SETTINGS_RASI" -p "$prompt"
-}
-
-# Helper: rofi text input with current value pre-filled
-rofi_input() {
-    local prompt="$1" current="$2"
-    echo "$current" | rofi -dmenu -theme "$SETTINGS_RASI" -p "$prompt"
-}
-
-# Decode categories bitmask to human labels
-cat_label() {
-    local c="$1" out=""
-    [[ "${c:0:1}" == "1" ]] && out+="General " || out+="ꞏꞏꞏꞏꞏꞏꞏ "
-    [[ "${c:1:1}" == "1" ]] && out+="Anime " || out+="ꞏꞏꞏꞏꞏ "
-    [[ "${c:2:1}" == "1" ]] && out+="People" || out+="ꞏꞏꞏꞏꞏꞏ"
-    echo "$out"
-}
-
-# Decode purity bitmask
-pur_label() {
-    local p="$1" out=""
-    [[ "${p:0:1}" == "1" ]] && out+="SFW " || out+="ꞏꞏꞏ "
-    [[ "${p:1:1}" == "1" ]] && out+="Sketchy " || out+="ꞏꞏꞏꞏꞏꞏꞏ "
-    [[ "${p:2:1}" == "1" ]] && out+="NSFW" || out+="ꞏꞏꞏꞏ"
-    echo "$out"
-}
-
-toggle_bit() {
-    local val="$1" pos="$2"
-    local c="${val:$pos:1}"
-    if [[ "$c" == "1" ]]; then c="0"; else c="1"; fi
-    echo "${val:0:$pos}${c}${val:$((pos+1))}"
-}
-
-run_settings() {
-    # Ensure config exists
-    python3 "$WALLHAVEN_PY" settings >/dev/null 2>&1
-    WH_CONF="$HOME/.config/hypr-os/wallhaven.conf"
-    [[ -f "$WH_CONF" ]] || return
-
-    while true; do
-        local source=$(conf_get source)
-        local sorting=$(conf_get sorting)
-        local categories=$(conf_get categories)
-        local purity=$(conf_get purity)
-        local atleast=$(conf_get atleast)
-        local ratios=$(conf_get ratios)
-        local query=$(conf_get query)
-        local api_key=$(conf_get api_key)
-
-        local source_icon=""
-        case "$source" in
-            local)     source_icon="📁 Local only" ;;
-            wallhaven) source_icon="🌐 Wallhaven only" ;;
-            both)      source_icon="📁+🌐 Both" ;;
-        esac
-
-        local key_status="not set"
-        [[ -n "$api_key" ]] && key_status="configured ✓"
-
-        local entries=""
-        entries+="───────── Source ─────────"$'\n'
-        entries+="  󰉌  Source          $source_icon"$'\n'
-        entries+=""$'\n'
-        entries+="───────── Search ─────────"$'\n'
-        entries+="  󰍉  Search query    ${query:-  (none)}"$'\n'
-        entries+="  󰒺  Sorting         $sorting"$'\n'
-        entries+=""$'\n'
-        entries+="───────── Filters ────────"$'\n'
-        entries+="  󰉋  Categories      $(cat_label "$categories")"$'\n'
-        entries+="  󰒃  Purity          $(pur_label "$purity")"$'\n'
-        entries+="  󰍹  Min resolution  $atleast"$'\n'
-        entries+="  󰢮  Aspect ratio    $ratios"$'\n'
-        entries+=""$'\n'
-        entries+="───────── Account ────────"$'\n'
-        entries+="  󰌆  API key         $key_status"$'\n'
-        entries+=""$'\n'
-        entries+="  󰄬  Done"
-
-        local choice
-        choice=$(printf '%s' "$entries" | rofi -dmenu -i \
-            -theme "$SETTINGS_RASI" -p "⚙ Wallhaven Settings" \
-            -matching fuzzy) || return
-
-        case "$choice" in
-            *Done*) return ;;
-            *Source*)
-                local new
-                new=$(rofi_pick "󰉌 Source" \
-                    "📁  local        Use wallpapers from ~/Pictures/Wallpaper" \
-                    "🌐  wallhaven    Fetch from wallhaven.cc API" \
-                    "📁+🌐  both        Local + Wallhaven combined") || continue
-                case "$new" in
-                    *local*)     conf_set source local; write_mode local ;;
-                    *wallhaven*) conf_set source wallhaven; write_mode wallhaven ;;
-                    *both*)      conf_set source both; write_mode both ;;
-                esac
-                ;;
-            *"Search query"*)
-                local new
-                new=$(rofi_input "󰍉 Search query" "$query") || continue
-                conf_set query "$new"
-                ;;
-            *Sorting*)
-                local new
-                new=$(rofi_pick "󰒺 Sorting" \
-                    "random       Shuffled results" \
-                    "toplist      Most popular" \
-                    "hot          Trending now" \
-                    "latest       Newest uploads" \
-                    "relevance    Best match for query") || continue
-                new="${new%% *}"
-                conf_set sorting "$new"
-                ;;
-            *Categories*)
-                # Toggle loop
-                local cats="$categories"
-                while true; do
-                    local pick
-                    pick=$(rofi_pick "󰉋 Toggle categories (current: $(cat_label "$cats"))" \
-                        "$( [[ ${cats:0:1} == 1 ]] && echo '󰄲' || echo '󰄮' )  General" \
-                        "$( [[ ${cats:1:1} == 1 ]] && echo '󰄲' || echo '󰄮' )  Anime" \
-                        "$( [[ ${cats:2:1} == 1 ]] && echo '󰄲' || echo '󰄮' )  People" \
-                        "  Apply") || break
-                    case "$pick" in
-                        *General*) cats=$(toggle_bit "$cats" 0) ;;
-                        *Anime*)   cats=$(toggle_bit "$cats" 1) ;;
-                        *People*)  cats=$(toggle_bit "$cats" 2) ;;
-                        *Apply*)   break ;;
-                    esac
-                done
-                conf_set categories "$cats"
-                ;;
-            *Purity*)
-                local pur="$purity"
-                while true; do
-                    local pick
-                    pick=$(rofi_pick "󰒃 Toggle purity (current: $(pur_label "$pur"))" \
-                        "$( [[ ${pur:0:1} == 1 ]] && echo '󰄲' || echo '󰄮' )  SFW" \
-                        "$( [[ ${pur:1:1} == 1 ]] && echo '󰄲' || echo '󰄮' )  Sketchy" \
-                        "$( [[ ${pur:2:1} == 1 ]] && echo '󰄲' || echo '󰄮' )  NSFW (needs API key)" \
-                        "  Apply") || break
-                    case "$pick" in
-                        *SFW*)     pur=$(toggle_bit "$pur" 0) ;;
-                        *Sketchy*) pur=$(toggle_bit "$pur" 1) ;;
-                        *NSFW*)    pur=$(toggle_bit "$pur" 2) ;;
-                        *Apply*)   break ;;
-                    esac
-                done
-                conf_set purity "$pur"
-                ;;
-            *"Min resolution"*)
-                local new
-                new=$(rofi_pick "󰍹 Minimum resolution" \
-                    "2560x1440    1440p" \
-                    "3840x2160    4K" \
-                    "1920x1080    1080p" \
-                    "any          No minimum") || continue
-                new="${new%% *}"
-                [[ "$new" == "any" ]] && new=""
-                conf_set atleast "$new"
-                ;;
-            *"Aspect ratio"*)
-                local new
-                new=$(rofi_pick "󰢮 Aspect ratio" \
-                    "16x9         Widescreen" \
-                    "21x9         Ultrawide" \
-                    "16x10        MacBook-style" \
-                    "any          No filter") || continue
-                new="${new%% *}"
-                [[ "$new" == "any" ]] && new=""
-                conf_set ratios "$new"
-                ;;
-            *"API key"*)
-                local new
-                new=$(rofi_input "󰌆 API key (from wallhaven.cc/settings)" "$api_key") || continue
-                conf_set api_key "$new"
-                ;;
-        esac
-    done
-}
-
 # ── Main loop ──
 
 MODE=$(read_mode)
@@ -421,23 +224,17 @@ while true; do
         both)      mode_label="📁+🌐 Both" ;;
     esac
 
-    PROMPT="$mode_label  [$theme_indicator]  F2:⚙"
+    PROMPT="$mode_label  [$theme_indicator]  ⚙ Super+Shift+B"
 
     # Build entries. First row is a clickable settings/mode row.
     ENTRIES_FILE=$(mktemp)
     trap 'rm -f "$ENTRIES_FILE"' EXIT
 
-    {
-        echo "⚙ Settings"
-        case "$MODE" in
-            local)     build_local_entries ;;
-            wallhaven) build_wallhaven_entries ;;
-            both)      build_local_entries; build_wallhaven_entries ;;
-        esac
-    } > "$ENTRIES_FILE"
-
-    # Offset CURRENT_INDEX by 1 for the settings row
-    [[ -n "$CURRENT_INDEX" ]] && CURRENT_INDEX=$((CURRENT_INDEX + 1))
+    case "$MODE" in
+        local)     build_local_entries > "$ENTRIES_FILE" ;;
+        wallhaven) build_wallhaven_entries > "$ENTRIES_FILE" ;;
+        both)      { build_local_entries; build_wallhaven_entries; } > "$ENTRIES_FILE" ;;
+    esac
 
     ACTIVE_ARGS=()
     [[ -n "$CURRENT_INDEX" && "$MODE" != "wallhaven" ]] && ACTIVE_ARGS=( -a "$CURRENT_INDEX" )
@@ -451,7 +248,6 @@ while true; do
         -kb-custom-1 "Alt+t" \
         -kb-custom-2 "Alt+l" \
         -kb-custom-3 "Alt+w" \
-        -kb-custom-4 "F2" \
         -kb-custom-5 "Alt+n" \
         -kb-custom-6 "Alt+p" \
         -kb-accept-entry "Return" \
@@ -464,13 +260,6 @@ while true; do
         0)
             # Selection made.
             [[ -z "$CHOICE" ]] && exit 0
-
-            # Settings row clicked
-            if [[ "$CHOICE" == "⚙"* ]]; then
-                run_settings
-                MODE=$(read_mode)
-                continue
-            fi
 
             SELECTED=""
             if [[ "$MODE" == "wallhaven" ]]; then
@@ -505,10 +294,6 @@ while true; do
         12)  # Alt+w: switch to wallhaven
             MODE="wallhaven"; WH_PAGE=1
             write_mode "wallhaven"
-            continue
-            ;;
-        13)  # Alt+s: settings
-            run_settings
             continue
             ;;
         14)  # Alt+n: next page
