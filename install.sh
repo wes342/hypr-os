@@ -122,7 +122,15 @@ chmod +x "$CONFIG_SRC/hypr/scripts/"*.sh 2>/dev/null || true
 chmod +x "$CONFIG_SRC/waybar/scripts/"*.sh 2>/dev/null || true
 chmod +x "$CONFIG_SRC/waybar/scripts/"*.py 2>/dev/null || true
 chmod +x "$CONFIG_SRC/eww/scripts/"*.sh 2>/dev/null || true
+chmod +x "$SCRIPT_DIR/scripts/"*.py 2>/dev/null || true
 info "Scripts marked executable"
+
+# ── Install wallpaper manager to ~/.local/bin ──
+mkdir -p "$HOME/.local/bin"
+cp -f "$SCRIPT_DIR/scripts/wallpaper-app.py" "$HOME/.local/bin/hypr-wallpaper"
+cp -f "$SCRIPT_DIR/scripts/wallhaven.py" "$HOME/.local/bin/hypr-wallhaven"
+chmod +x "$HOME/.local/bin/hypr-wallpaper" "$HOME/.local/bin/hypr-wallhaven"
+info "Installed wallpaper manager to ~/.local/bin/hypr-wallpaper"
 
 # ── Set HYPR_OS_DIR for theme script ─────
 SHELL_RC="$HOME/.bashrc"

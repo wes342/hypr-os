@@ -209,7 +209,9 @@ def wh_download_full(item):
 
 # ── Apply wallpaper ──
 
-def apply_wallpaper(path: Path, retheme: bool):
+def apply_wallpaper(path: Path, retheme: bool, callback=None):
+    """Apply wallpaper. If retheme, runs theme.sh synchronously so the
+    callback can refresh the app's CSS afterwards."""
     path_str = str(path)
     cache = HOME / ".cache" / "hypr" / "current_wallpaper"
     cache.parent.mkdir(parents=True, exist_ok=True)
@@ -234,20 +236,29 @@ def apply_wallpaper(path: Path, retheme: bool):
     subprocess.Popen(["hyprpaper"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     if retheme:
-        subprocess.Popen(
+        subprocess.run(
             [str(THEME_SH), path_str],
             env={**os.environ, "HYPR_OS_DIR": str(HYPR_OS)},
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
+        if callback:
+            GLib.idle_add(callback)
 
 
 # ── GTK App ──
 
 class WallpaperTile(Gtk.FlowBoxChild):
-    def __init__(self, thumb_path, label, full_path=None, wh_item=None):
+    def __init__(self, thumb_path, label, full_path=None, wh_item=None, on_save=None):
         super().__init__()
         self.full_path = full_path
         self.wh_item = wh_item
+        self._on_save = on_save
+
+        # Right-click gesture for "Save to library"
+        if wh_item and on_save:
+            rc = Gtk.GestureClick(button=3)
+            rc.connect("pressed", self._on_right_click)
+            self.add_controller(rc)
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         box.set_margin_top(4)
@@ -278,6 +289,10 @@ class WallpaperTile(Gtk.FlowBoxChild):
         box.append(lbl)
 
         self.set_child(box)
+
+    def _on_right_click(self, gesture, _n, _x, _y):
+        if self.wh_item and self._on_save:
+            self._on_save(self.wh_item)
 
 
 class WallpaperApp(Adw.Application):
@@ -499,7 +514,7 @@ class WallpaperApp(Adw.Application):
         if child.full_path:
             threading.Thread(
                 target=apply_wallpaper,
-                args=(child.full_path, self.retheme),
+                args=(child.full_path, self.retheme, self._refresh_theme_css),
                 daemon=True,
             ).start()
             self.local_status.set_label(f"Applied: {child.full_path.name}")
@@ -526,7 +541,7 @@ class WallpaperApp(Adw.Application):
         box.append(search_box)
 
         # Grid
-        scroll = Gtk.ScrolledWindow(vexpand=True)
+        self.wh_scroll = Gtk.ScrolledWindow(vexpand=True)
         self.wh_flow = Gtk.FlowBox()
         self.wh_flow.set_valign(Gtk.Align.START)
         self.wh_flow.set_max_children_per_line(5)
@@ -534,8 +549,8 @@ class WallpaperApp(Adw.Application):
         self.wh_flow.set_selection_mode(Gtk.SelectionMode.SINGLE)
         self.wh_flow.set_homogeneous(True)
         self.wh_flow.connect("child-activated", self._on_wh_activated)
-        scroll.set_child(self.wh_flow)
-        box.append(scroll)
+        self.wh_scroll.set_child(self.wh_flow)
+        box.append(self.wh_scroll)
 
         # Pagination
         page_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -566,6 +581,9 @@ class WallpaperApp(Adw.Application):
         query = self.wh_search.get_text()
         self.wh_page = 1
         self.wh_status.set_label("Searching...")
+        # Persist the query for next session
+        self.conf["query"] = query
+        write_conf(self.conf)
         threading.Thread(target=self._load_wh_results, args=(query,), daemon=True).start()
 
     def _load_wh_results(self, query):
@@ -591,11 +609,16 @@ class WallpaperApp(Adw.Application):
             tp = wh_thumb_path(item)
             res = item.get("resolution", "?")
             label = f"{item['id']}  {res}"
-            tile = WallpaperTile(tp, label, wh_item=item)
+            tile = WallpaperTile(tp, label, wh_item=item, on_save=self._save_wh_only)
             self.wh_flow.append(tile)
 
         self.wh_page_label.set_label(f"Page {self.wh_page}")
-        self.wh_status.set_label(f"{len(items)} results")
+        self.wh_status.set_label(f"{len(items)} results  ·  right-click to save without applying")
+
+        # Scroll to top
+        adj = self.wh_scroll.get_vadjustment()
+        if adj:
+            adj.set_value(0)
         return False
 
     def _wh_change_page(self, delta):
@@ -614,10 +637,27 @@ class WallpaperApp(Adw.Application):
     def _download_and_apply_wh(self, item):
         path = wh_download_full(item)
         if path:
-            apply_wallpaper(path, self.retheme)
+            apply_wallpaper(path, self.retheme, callback=self._refresh_theme_css)
             GLib.idle_add(self.wh_status.set_label, f"Applied: {path.name}")
         else:
             GLib.idle_add(self.wh_status.set_label, "Download failed")
+
+    def _save_wh_only(self, item):
+        """Right-click: download to library without applying."""
+        self.wh_status.set_label(f"Saving {item['id']}...")
+        def do_save():
+            path = wh_download_full(item)
+            if path:
+                GLib.idle_add(self.wh_status.set_label, f"Saved: {path.name}")
+            else:
+                GLib.idle_add(self.wh_status.set_label, "Save failed")
+        threading.Thread(target=do_save, daemon=True).start()
+
+    def _refresh_theme_css(self):
+        """Re-read colors.css and reload app styling after a theme change."""
+        win = self.get_active_window()
+        if win:
+            self._apply_theme_css(win)
 
     # ── Theme toggle ──
 
