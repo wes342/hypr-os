@@ -110,3 +110,29 @@ element selected.active {
     border-color:       @accent;
     background-color:   @bg;
 }
+
+/* Urgent entries = toolbar buttons (Theme toggle, Settings).
+   Compact inline pills that sit at the top of the grid. */
+element urgent,
+element alternate.urgent {
+    background-color:   @bg-highlight;
+    border-color:       @accent-dim;
+    border-radius:      6px;
+    border:             1px solid;
+    padding:            6px 14px;
+    orientation:        horizontal;
+}
+
+element selected.urgent {
+    background-color:   @accent-dim;
+    border-color:       @accent;
+}
+
+element-icon.urgent {
+    size:               0px;
+}
+
+element-text.urgent {
+    font:               "Iosevka Nerd Font Bold 12";
+    horizontal-align:   0.5;
+}

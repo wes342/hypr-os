@@ -230,13 +230,13 @@ while true; do
     ENTRIES_FILE=$(mktemp)
     trap 'rm -f "$ENTRIES_FILE"' EXIT
 
-    # Clickable control row + wallpaper entries
+    # Control entries (urgent-flagged so they look like toolbar buttons)
+    # then wallpaper tiles below.
     {
-        # Clickable controls (two separate entries)
         if [[ "$STATE" == "on" ]]; then
-            echo "󰄲 Re-theme: ON  (click to toggle)"
+            echo "󰄲 Theme"
         else
-            echo "󰄮 Re-theme: OFF (click to toggle)"
+            echo "󰄮 Theme"
         fi
         echo "⚙ Settings"
 
@@ -247,7 +247,7 @@ while true; do
         esac
     } > "$ENTRIES_FILE"
 
-    # Offset CURRENT_INDEX by 2 for the two control rows
+    # Offset CURRENT_INDEX by 2 for the control entries
     [[ -n "$CURRENT_INDEX" ]] && CURRENT_INDEX=$((CURRENT_INDEX + 2))
 
     ACTIVE_ARGS=()
@@ -259,6 +259,8 @@ while true; do
         -p "$PROMPT" \
         -format 's' \
         -matching fuzzy \
+        -u "0,1" \
+        -selected-row 2 \
         -kb-custom-1 "Alt+t" \
         -kb-custom-2 "Alt+l" \
         -kb-custom-3 "Alt+w" \
