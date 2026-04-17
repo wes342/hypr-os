@@ -421,14 +421,14 @@ while true; do
         both)      mode_label="📁+🌐 Both" ;;
     esac
 
-    PROMPT="$mode_label  [$theme_indicator]  Alt: l/w/t"
+    PROMPT="$mode_label  [$theme_indicator]  F2:⚙"
 
     # Build entries. First row is a clickable settings/mode row.
     ENTRIES_FILE=$(mktemp)
     trap 'rm -f "$ENTRIES_FILE"' EXIT
 
     {
-        echo "⚙  Settings  │  Source: $MODE  │  Theme: $STATE"
+        echo "⚙ Settings"
         case "$MODE" in
             local)     build_local_entries ;;
             wallhaven) build_wallhaven_entries ;;
@@ -451,8 +451,7 @@ while true; do
         -kb-custom-1 "Alt+t" \
         -kb-custom-2 "Alt+l" \
         -kb-custom-3 "Alt+w" \
-        -kb-screenshot "" \
-        -kb-custom-4 "Alt+s" \
+        -kb-custom-4 "F2" \
         -kb-custom-5 "Alt+n" \
         -kb-custom-6 "Alt+p" \
         -kb-accept-entry "Return" \
