@@ -224,31 +224,21 @@ while true; do
         both)      mode_label="📁+🌐 Both" ;;
     esac
 
-    PROMPT="$mode_label"
+    if [[ "$STATE" == "on" ]]; then
+        PROMPT="$mode_label  [✓ re-theme]  Alt+t"
+    else
+        PROMPT="$mode_label  [ ] re-theme   Alt+t"
+    fi
 
     # Build entries. First row is a clickable settings/mode row.
     ENTRIES_FILE=$(mktemp)
     trap 'rm -f "$ENTRIES_FILE"' EXIT
 
-    # Control entries (urgent-flagged so they look like toolbar buttons)
-    # then wallpaper tiles below.
-    {
-        if [[ "$STATE" == "on" ]]; then
-            echo "󰄲 Theme"
-        else
-            echo "󰄮 Theme"
-        fi
-        echo "⚙ Settings"
-
-        case "$MODE" in
-            local)     build_local_entries ;;
-            wallhaven) build_wallhaven_entries ;;
-            both)      build_local_entries; build_wallhaven_entries ;;
-        esac
-    } > "$ENTRIES_FILE"
-
-    # Offset CURRENT_INDEX by 2 for the control entries
-    [[ -n "$CURRENT_INDEX" ]] && CURRENT_INDEX=$((CURRENT_INDEX + 2))
+    case "$MODE" in
+        local)     build_local_entries > "$ENTRIES_FILE" ;;
+        wallhaven) build_wallhaven_entries > "$ENTRIES_FILE" ;;
+        both)      { build_local_entries; build_wallhaven_entries; } > "$ENTRIES_FILE" ;;
+    esac
 
     ACTIVE_ARGS=()
     [[ -n "$CURRENT_INDEX" && "$MODE" != "wallhaven" ]] && ACTIVE_ARGS=( -a "$CURRENT_INDEX" )
@@ -259,8 +249,6 @@ while true; do
         -p "$PROMPT" \
         -format 's' \
         -matching fuzzy \
-        -u "0,1" \
-        -selected-row 2 \
         -kb-custom-1 "Alt+t" \
         -kb-custom-2 "Alt+l" \
         -kb-custom-3 "Alt+w" \
@@ -276,20 +264,6 @@ while true; do
         0)
             # Selection made.
             [[ -z "$CHOICE" ]] && exit 0
-
-            # Control row: theme toggle
-            if [[ "$CHOICE" == *"Re-theme"* && "$CHOICE" != *"Settings"* ]]; then
-                if [[ "$STATE" == "on" ]]; then echo "off" > "$STATE_FILE"
-                else echo "on" > "$STATE_FILE"; fi
-                continue
-            fi
-
-            # Control row: settings (or combined row clicked on settings side)
-            if [[ "$CHOICE" == *"Settings"* ]]; then
-                "$HOME/.config/hypr/scripts/wallhaven-settings.sh" 2>/dev/null || true
-                MODE=$(read_mode)
-                continue
-            fi
 
             SELECTED=""
             if [[ "$MODE" == "wallhaven" ]]; then
