@@ -247,15 +247,33 @@ def apply_wallpaper(path: Path, retheme: bool, callback=None):
 
 # ── GTK App ──
 
+IGNORE_FILE = HOME / ".config" / "hypr-os" / "wallhaven-ignore.txt"
+
+
+def read_ignores():
+    if IGNORE_FILE.exists():
+        return set(IGNORE_FILE.read_text().splitlines())
+    return set()
+
+
+def add_ignore(wid):
+    ignores = read_ignores()
+    ignores.add(wid)
+    IGNORE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    IGNORE_FILE.write_text("\n".join(sorted(ignores)) + "\n")
+
+
 class WallpaperTile(Gtk.FlowBoxChild):
-    def __init__(self, thumb_path, label, full_path=None, wh_item=None, on_save=None):
+    def __init__(self, thumb_path, label, full_path=None, wh_item=None,
+                 on_save=None, on_ignore=None):
         super().__init__()
         self.full_path = full_path
         self.wh_item = wh_item
         self._on_save = on_save
+        self._on_ignore = on_ignore
 
-        # Right-click gesture for "Save to library"
-        if wh_item and on_save:
+        # Right-click gesture for context menu
+        if wh_item:
             rc = Gtk.GestureClick(button=3)
             rc.connect("pressed", self._on_right_click)
             self.add_controller(rc)
@@ -290,9 +308,29 @@ class WallpaperTile(Gtk.FlowBoxChild):
 
         self.set_child(box)
 
-    def _on_right_click(self, gesture, _n, _x, _y):
-        if self.wh_item and self._on_save:
-            self._on_save(self.wh_item)
+    def _on_right_click(self, gesture, _n, x, y):
+        if not self.wh_item:
+            return
+        menu = Gio.Menu()
+        menu.append("Save to library", "tile.save")
+        menu.append("Ignore this wallpaper", "tile.ignore")
+
+        action_group = Gio.SimpleActionGroup()
+
+        save_action = Gio.SimpleAction.new("save", None)
+        save_action.connect("activate", lambda *_: self._on_save(self.wh_item) if self._on_save else None)
+        action_group.add_action(save_action)
+
+        ignore_action = Gio.SimpleAction.new("ignore", None)
+        ignore_action.connect("activate", lambda *_: self._on_ignore(self.wh_item) if self._on_ignore else None)
+        action_group.add_action(ignore_action)
+
+        self.insert_action_group("tile", action_group)
+
+        popover = Gtk.PopoverMenu.new_from_model(menu)
+        popover.set_parent(self)
+        popover.set_pointing_to(Gdk.Rectangle(int(x), int(y), 1, 1))
+        popover.popup()
 
 
 class WallpaperApp(Adw.Application):
@@ -350,6 +388,10 @@ class WallpaperApp(Adw.Application):
 
         # Load local tiles in background
         threading.Thread(target=self._load_local_tiles, daemon=True).start()
+
+        # Auto-load Wallhaven results if there's a saved query or sorting
+        threading.Thread(target=self._load_wh_results,
+                         args=(self.conf.get("query", ""),), daemon=True).start()
 
     def _apply_theme_css(self, win):
         bg = read_color("bg", "#1a1b26")
@@ -605,15 +647,22 @@ class WallpaperApp(Adw.Application):
                 break
             self.wh_flow.remove(child)
 
+        ignores = read_ignores()
+        shown = 0
         for item in items:
+            if item["id"] in ignores:
+                continue
             tp = wh_thumb_path(item)
             res = item.get("resolution", "?")
             label = f"{item['id']}  {res}"
-            tile = WallpaperTile(tp, label, wh_item=item, on_save=self._save_wh_only)
+            tile = WallpaperTile(tp, label, wh_item=item,
+                                 on_save=self._save_wh_only,
+                                 on_ignore=self._ignore_wh)
             self.wh_flow.append(tile)
+            shown += 1
 
         self.wh_page_label.set_label(f"Page {self.wh_page}")
-        self.wh_status.set_label(f"{len(items)} results  ·  right-click to save without applying")
+        self.wh_status.set_label(f"{shown} results  ·  right-click for options")
 
         # Scroll to top
         adj = self.wh_scroll.get_vadjustment()
@@ -643,7 +692,7 @@ class WallpaperApp(Adw.Application):
             GLib.idle_add(self.wh_status.set_label, "Download failed")
 
     def _save_wh_only(self, item):
-        """Right-click: download to library without applying."""
+        """Context menu: download to library without applying."""
         self.wh_status.set_label(f"Saving {item['id']}...")
         def do_save():
             path = wh_download_full(item)
@@ -652,6 +701,20 @@ class WallpaperApp(Adw.Application):
             else:
                 GLib.idle_add(self.wh_status.set_label, "Save failed")
         threading.Thread(target=do_save, daemon=True).start()
+
+    def _ignore_wh(self, item):
+        """Context menu: add to ignore list and remove tile from grid."""
+        wid = item["id"]
+        add_ignore(wid)
+        # Remove the tile from the grid
+        child = self.wh_flow.get_first_child()
+        while child:
+            nxt = child.get_next_sibling()
+            if hasattr(child, 'wh_item') and child.wh_item and child.wh_item.get("id") == wid:
+                self.wh_flow.remove(child)
+                break
+            child = nxt
+        self.wh_status.set_label(f"Ignored: {wid}")
 
     def _refresh_theme_css(self):
         """Re-read colors.css and reload app styling after a theme change."""
