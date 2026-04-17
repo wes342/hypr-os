@@ -2,8 +2,6 @@
 # Standalone launcher for the Wallhaven settings form.
 # Called from SUPER+SHIFT+B or from the wallpaper browser.
 
-set -euo pipefail
-
 HYPR_OS_DIR="${HYPR_OS_DIR:-$HOME/dev/hypr-os}"
 WALLHAVEN_PY="$HYPR_OS_DIR/scripts/wallhaven.py"
 WH_CONF="$HOME/.config/hypr-os/wallhaven.conf"
@@ -13,8 +11,8 @@ SETTINGS_RASI="$HOME/.config/rofi/settings.rasi"
 python3 "$WALLHAVEN_PY" settings >/dev/null 2>&1
 [[ -f "$WH_CONF" ]] || exit 1
 
-conf_get() { grep "^$1=" "$WH_CONF" 2>/dev/null | cut -d= -f2; }
-conf_set() { sed -i "s/^$1=.*/$1=$2/" "$WH_CONF"; }
+conf_get() { grep "^$1=" "$WH_CONF" 2>/dev/null | cut -d= -f2 || echo ""; }
+conf_set() { sed -i "s|^$1=.*|$1=$2|" "$WH_CONF"; }
 
 rofi_pick() {
     local prompt="$1"; shift
@@ -23,8 +21,6 @@ rofi_pick() {
 
 rofi_input() {
     local prompt="$1" current="$2"
-    # -filter pre-fills the text box so user can edit in place.
-    # Empty stdin so there are no list entries to filter against.
     rofi -dmenu -theme "$SETTINGS_RASI" -p "$prompt" -filter "$current" < /dev/null
 }
 
@@ -52,41 +48,41 @@ toggle_bit() {
 }
 
 while true; do
-    local_source=$(conf_get source)
-    local_sorting=$(conf_get sorting)
-    local_categories=$(conf_get categories)
-    local_purity=$(conf_get purity)
-    local_atleast=$(conf_get atleast)
-    local_ratios=$(conf_get ratios)
-    local_query=$(conf_get query)
-    local_api_key=$(conf_get api_key)
+    src=$(conf_get source)
+    srt=$(conf_get sorting)
+    cats=$(conf_get categories)
+    pur=$(conf_get purity)
+    res=$(conf_get atleast)
+    rat=$(conf_get ratios)
+    qry=$(conf_get query)
+    key=$(conf_get api_key)
 
-    source_icon=""
-    case "$local_source" in
-        local)     source_icon="📁 Local only" ;;
-        wallhaven) source_icon="🌐 Wallhaven only" ;;
-        both)      source_icon="📁+🌐 Both" ;;
+    src_label=""
+    case "$src" in
+        local)     src_label="📁 Local only" ;;
+        wallhaven) src_label="🌐 Wallhaven only" ;;
+        both)      src_label="📁+🌐 Both" ;;
     esac
 
-    key_status="not set"
-    [[ -n "$local_api_key" ]] && key_status="configured ✓"
+    key_label="not set"
+    [[ -n "$key" ]] && key_label="configured ✓"
 
     entries=""
     entries+="───────── Source ─────────"$'\n'
-    entries+="  󰉌  Source          $source_icon"$'\n'
+    entries+="  󰉌  Source          $src_label"$'\n'
     entries+=""$'\n'
     entries+="───────── Search ─────────"$'\n'
-    entries+="  󰍉  Search query    ${local_query:-  (none)}"$'\n'
-    entries+="  󰒺  Sorting         $local_sorting"$'\n'
+    entries+="  󰍉  Search query    ${qry:-  (none)}"$'\n'
+    entries+="  󰒺  Sorting         $srt"$'\n'
     entries+=""$'\n'
     entries+="───────── Filters ────────"$'\n'
-    entries+="  󰉋  Categories      $(cat_label "$local_categories")"$'\n'
-    entries+="  󰒃  Purity          $(pur_label "$local_purity")"$'\n'
-    entries+="  󰍹  Min resolution  $local_atleast"$'\n'
-    entries+="  󰢮  Aspect ratio    $local_ratios"$'\n'
+    entries+="  󰉋  Categories      $(cat_label "$cats")"$'\n'
+    entries+="  󰒃  Purity          $(pur_label "$pur")"$'\n'
+    entries+="  󰍹  Min resolution  $res"$'\n'
+    entries+="  󰢮  Aspect ratio    $rat"$'\n'
     entries+=""$'\n'
     entries+="───────── Account ────────"$'\n'
-    entries+="  󰌆  API key         $key_status"$'\n'
+    entries+="  󰌆  API key         $key_label"$'\n'
     entries+=""$'\n'
     entries+="  󰄬  Done"
 
@@ -108,7 +104,7 @@ while true; do
             esac
             ;;
         *"Search query"*)
-            new=$(rofi_input "󰍉 Search query" "$local_query") || continue
+            new=$(rofi_input "󰍉 Search query" "$qry") || continue
             conf_set query "$new"
             ;;
         *Sorting*)
@@ -122,9 +118,8 @@ while true; do
             conf_set sorting "$new"
             ;;
         *Categories*)
-            cats="$local_categories"
             while true; do
-                local gen_icon="󰄮" ani_icon="󰄮" ppl_icon="󰄮"
+                gen_icon="󰄮"; ani_icon="󰄮"; ppl_icon="󰄮"
                 [[ "${cats:0:1}" == "1" ]] && gen_icon="󰄲"
                 [[ "${cats:1:1}" == "1" ]] && ani_icon="󰄲"
                 [[ "${cats:2:1}" == "1" ]] && ppl_icon="󰄲"
@@ -133,7 +128,7 @@ while true; do
                     "$gen_icon  General" \
                     "$ani_icon  Anime" \
                     "$ppl_icon  People" \
-                    "󰄬  Done") || { conf_set categories "$cats"; break; }
+                    "󰄬  Done") || break
                 case "$pick" in
                     *General*) cats=$(toggle_bit "$cats" 0); conf_set categories "$cats" ;;
                     *Anime*)   cats=$(toggle_bit "$cats" 1); conf_set categories "$cats" ;;
@@ -143,9 +138,8 @@ while true; do
             done
             ;;
         *Purity*)
-            pur="$local_purity"
             while true; do
-                local sfw_icon="󰄮" sketchy_icon="󰄮" nsfw_icon="󰄮"
+                sfw_icon="󰄮"; sketchy_icon="󰄮"; nsfw_icon="󰄮"
                 [[ "${pur:0:1}" == "1" ]] && sfw_icon="󰄲"
                 [[ "${pur:1:1}" == "1" ]] && sketchy_icon="󰄲"
                 [[ "${pur:2:1}" == "1" ]] && nsfw_icon="󰄲"
@@ -154,7 +148,7 @@ while true; do
                     "$sfw_icon  SFW" \
                     "$sketchy_icon  Sketchy" \
                     "$nsfw_icon  NSFW" \
-                    "󰄬  Done") || { conf_set purity "$pur"; break; }
+                    "󰄬  Done") || break
                 case "$pick" in
                     *SFW*)     pur=$(toggle_bit "$pur" 0); conf_set purity "$pur" ;;
                     *Sketchy*) pur=$(toggle_bit "$pur" 1); conf_set purity "$pur" ;;
@@ -184,7 +178,7 @@ while true; do
             conf_set ratios "$new"
             ;;
         *"API key"*)
-            new=$(rofi_input "󰌆 API key (from wallhaven.cc/settings)" "$local_api_key") || continue
+            new=$(rofi_input "󰌆 API key (from wallhaven.cc/settings)" "$key") || continue
             conf_set api_key "$new"
             ;;
     esac
