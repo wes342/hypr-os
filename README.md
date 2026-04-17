@@ -177,6 +177,7 @@ hypr-os/
 - [Keybindings](docs/KEYBINDS.md) -- all keyboard shortcuts
 - [Theming](docs/THEMING.md) -- how the dynamic theme system works
 - [Gaming](docs/GAMING.md) -- gaming-specific setup (Nvidia, Steam, Gamescope)
+- [Custom Apps](docs/CUSTOM-APPS.md) -- FL Studio, Overwatch 2, and other app-specific setup
 
 ## License
 
