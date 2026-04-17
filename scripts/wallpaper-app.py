@@ -1,0 +1,748 @@
+#!/usr/bin/env python3
+"""
+hypr-os Wallpaper Manager — GTK4 + Adwaita app.
+
+Browse local wallpapers and Wallhaven, apply wallpapers, toggle
+re-theming, and configure Wallhaven settings — all with real widgets.
+Reads accent colors from ~/.config/waybar/colors.css so the window
+matches the current wallpaper palette.
+"""
+
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+import threading
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+import gi
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+from gi.repository import Adw, Gdk, GdkPixbuf, Gio, GLib, Gtk
+
+# ── Paths ──
+
+HOME = Path.home()
+WALL_DIR = HOME / "Pictures" / "Wallpaper"
+CACHE_DIR = HOME / ".cache" / "hypr-os" / "thumbs"
+WH_CACHE = HOME / ".cache" / "hypr-os" / "wallhaven" / "thumbs"
+WH_DEST = WALL_DIR / "wallhaven"
+COLORS_CSS = HOME / ".config" / "waybar" / "colors.css"
+CONF_FILE = HOME / ".config" / "hypr-os" / "wallhaven.conf"
+STATE_FILE = HOME / ".cache" / "hypr-os" / "wallpaper-browser.state"
+HYPR_OS = Path(os.environ.get("HYPR_OS_DIR", HOME / "dev" / "hypr-os"))
+THEME_SH = HYPR_OS / "scripts" / "theme.sh"
+THUMB_SIZE = 220
+
+CONF_DEFAULTS = {
+    "api_key": "", "query": "", "categories": "111", "purity": "100",
+    "sorting": "random", "atleast": "2560x1440", "ratios": "16x9",
+    "source": "local",
+}
+
+
+# ── Config helpers ──
+
+def read_conf():
+    conf = dict(CONF_DEFAULTS)
+    CONF_FILE.parent.mkdir(parents=True, exist_ok=True)
+    if CONF_FILE.exists():
+        for line in CONF_FILE.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" in line:
+                k, v = line.split("=", 1)
+                conf[k.strip()] = v.strip()
+    else:
+        write_conf(conf)
+    return conf
+
+
+def write_conf(conf):
+    CONF_FILE.parent.mkdir(parents=True, exist_ok=True)
+    lines = ["# hypr-os Wallhaven settings", ""]
+    for k, v in conf.items():
+        lines.append(f"{k}={v}")
+    CONF_FILE.write_text("\n".join(lines) + "\n")
+
+
+def read_theme_state():
+    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    if STATE_FILE.exists():
+        return STATE_FILE.read_text().strip() == "on"
+    return True
+
+
+def write_theme_state(on: bool):
+    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    STATE_FILE.write_text("on" if on else "off")
+
+
+def read_color(name, fallback):
+    if COLORS_CSS.exists():
+        m = re.search(
+            rf"@define-color\s+{re.escape(name)}\s+(#[0-9a-fA-F]{{6}})",
+            COLORS_CSS.read_text(),
+        )
+        if m:
+            return m.group(1)
+    return fallback
+
+
+# ── Thumbnail helpers ──
+
+def make_thumb(src: Path) -> Path:
+    rel = str(src.relative_to(WALL_DIR))
+    mtime = int(src.stat().st_mtime)
+    h = hashlib.md5(rel.encode()).hexdigest()[:10]
+    thumb = CACHE_DIR / f"{THUMB_SIZE}x{THUMB_SIZE}_{mtime}_{h}.png"
+    if not thumb.exists():
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        # Remove stale
+        for old in CACHE_DIR.glob(f"*_{h}.png"):
+            old.unlink(missing_ok=True)
+        subprocess.run(
+            ["magick", str(src), "-resize", f"{THUMB_SIZE}x{THUMB_SIZE}^",
+             "-gravity", "center", "-extent", f"{THUMB_SIZE}x{THUMB_SIZE}",
+             "-strip", str(thumb)],
+            capture_output=True,
+        )
+    return thumb
+
+
+def list_local_wallpapers():
+    exts = {".jpg", ".jpeg", ".png", ".webp"}
+    if not WALL_DIR.exists():
+        return []
+    return sorted(
+        p for p in WALL_DIR.rglob("*") if p.suffix.lower() in exts and p.is_file()
+    )
+
+
+# ── Wallhaven API ──
+
+def wh_search(conf, query="", page=1):
+    params = {
+        "categories": conf["categories"], "purity": conf["purity"],
+        "sorting": conf["sorting"], "atleast": conf["atleast"],
+        "ratios": conf["ratios"], "page": str(page),
+    }
+    q = query or conf.get("query", "")
+    if q:
+        params["q"] = q
+    if conf.get("api_key"):
+        params["apikey"] = conf["api_key"]
+    url = "https://wallhaven.cc/api/v1/search?" + urllib.parse.urlencode(params)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "hypr-os/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read()).get("data", [])
+    except Exception as e:
+        print(f"Wallhaven API error: {e}", file=sys.stderr)
+        return []
+
+
+def wh_thumb_path(item):
+    wid = item["id"]
+    ext = item.get("file_type", "image/jpeg").split("/")[-1]
+    if ext == "jpeg":
+        ext = "jpg"
+    return WH_CACHE / f"{wid}.{ext}"
+
+
+def wh_download_thumb(item):
+    tp = wh_thumb_path(item)
+    if tp.exists():
+        return tp
+    WH_CACHE.mkdir(parents=True, exist_ok=True)
+    url = item.get("thumbs", {}).get("large", "")
+    if not url:
+        return None
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "hypr-os/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            tp.write_bytes(resp.read())
+        return tp
+    except Exception:
+        return None
+
+
+def wh_download_full(item):
+    WH_DEST.mkdir(parents=True, exist_ok=True)
+    # Resolve full URL
+    wid = item["id"]
+    conf = read_conf()
+    params = {}
+    if conf.get("api_key"):
+        params["apikey"] = conf["api_key"]
+    url = f"https://wallhaven.cc/api/v1/w/{wid}"
+    if params:
+        url += "?" + urllib.parse.urlencode(params)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "hypr-os/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read())
+        full_url = data.get("data", {}).get("path", "")
+    except Exception:
+        return None
+    if not full_url:
+        return None
+    fname = full_url.rsplit("/", 1)[-1]
+    dest = WH_DEST / fname
+    if dest.exists():
+        return dest
+    try:
+        req = urllib.request.Request(full_url, headers={"User-Agent": "hypr-os/1.0"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            dest.write_bytes(resp.read())
+        return dest
+    except Exception:
+        return None
+
+
+# ── Apply wallpaper ──
+
+def apply_wallpaper(path: Path, retheme: bool):
+    path_str = str(path)
+    cache = HOME / ".cache" / "hypr" / "current_wallpaper"
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_text(path_str)
+
+    # Write hyprpaper.conf
+    try:
+        monitors = json.loads(
+            subprocess.check_output(["hyprctl", "monitors", "-j"], timeout=3)
+        )
+        mon_names = [m["name"] for m in monitors]
+    except Exception:
+        mon_names = ["DP-3"]
+
+    hpc = HYPR_OS / "config" / "hypr" / "hyprpaper.conf"
+    lines = ["splash = false", "ipc = on", ""]
+    for m in mon_names:
+        lines += [f"wallpaper {{", f"    monitor = {m}", f"    path = {path_str}", "}", ""]
+    hpc.write_text("\n".join(lines))
+
+    subprocess.run(["killall", "hyprpaper"], capture_output=True)
+    subprocess.Popen(["hyprpaper"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    if retheme:
+        subprocess.Popen(
+            [str(THEME_SH), path_str],
+            env={**os.environ, "HYPR_OS_DIR": str(HYPR_OS)},
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+
+
+# ── GTK App ──
+
+class WallpaperTile(Gtk.FlowBoxChild):
+    def __init__(self, thumb_path, label, full_path=None, wh_item=None):
+        super().__init__()
+        self.full_path = full_path
+        self.wh_item = wh_item
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        box.set_margin_top(4)
+        box.set_margin_bottom(4)
+        box.set_margin_start(4)
+        box.set_margin_end(4)
+
+        if thumb_path and thumb_path.exists():
+            try:
+                pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                    str(thumb_path), THUMB_SIZE, THUMB_SIZE, True
+                )
+                img = Gtk.Image.new_from_pixbuf(pb)
+            except Exception:
+                img = Gtk.Image.new_from_icon_name("image-missing")
+        else:
+            img = Gtk.Image.new_from_icon_name("image-loading")
+
+        img.set_size_request(THUMB_SIZE, THUMB_SIZE)
+        img.add_css_class("wallpaper-thumb")
+        box.append(img)
+
+        lbl = Gtk.Label(label=label)
+        lbl.set_ellipsize(3)  # PANGO_ELLIPSIZE_END
+        lbl.set_max_width_chars(20)
+        lbl.add_css_class("wallpaper-label")
+        box.append(lbl)
+
+        self.set_child(box)
+
+
+class WallpaperApp(Adw.Application):
+    def __init__(self):
+        super().__init__(application_id="dev.hypros.wallpaper-manager")
+        self.conf = read_conf()
+        self.retheme = read_theme_state()
+        self.wh_page = 1
+        self.wh_items = []
+
+    def do_activate(self):
+        win = Adw.ApplicationWindow(application=self)
+        win.set_title("Wallpaper Manager")
+        win.set_default_size(1100, 750)
+
+        # ── Custom CSS from theme ──
+        self._apply_theme_css(win)
+
+        # ── Header bar ──
+        header = Adw.HeaderBar()
+        header.set_show_end_title_buttons(True)
+
+        # Theme toggle
+        self.theme_check = Gtk.CheckButton(label="Re-theme")
+        self.theme_check.set_active(self.retheme)
+        self.theme_check.connect("toggled", self._on_theme_toggled)
+        header.pack_start(self.theme_check)
+
+        # Settings button
+        settings_btn = Gtk.Button(icon_name="emblem-system-symbolic")
+        settings_btn.set_tooltip_text("Wallhaven Settings")
+        settings_btn.connect("clicked", self._on_settings_clicked)
+        header.pack_end(settings_btn)
+
+        # ── Tab switcher ──
+        self.stack = Adw.ViewStack()
+        switcher = Adw.ViewSwitcher(stack=self.stack)
+        switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
+        header.set_title_widget(switcher)
+
+        # ── Local tab ──
+        local_page = self._build_local_tab()
+        self.stack.add_titled(local_page, "local", "Local")
+
+        # ── Wallhaven tab ──
+        wh_page = self._build_wallhaven_tab()
+        self.stack.add_titled(wh_page, "wallhaven", "Wallhaven")
+
+        # ── Assemble ──
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        main_box.append(header)
+        main_box.append(self.stack)
+        win.set_content(main_box)
+        win.present()
+
+        # Load local tiles in background
+        threading.Thread(target=self._load_local_tiles, daemon=True).start()
+
+    def _apply_theme_css(self, win):
+        bg = read_color("bg", "#1a1b26")
+        bg_hl = read_color("bg_highlight", "#24283b")
+        fg = read_color("fg", "#c0caf5")
+        fg_dim = read_color("fg_dim", "#565f89")
+        accent = read_color("accent", "#7aa2f7")
+        accent_dim = read_color("accent_dim", "#3d59a1")
+
+        css = f"""
+        window, .main-box {{
+            background-color: {bg};
+            color: {fg};
+        }}
+        headerbar {{
+            background-color: {bg_hl};
+            color: {fg};
+        }}
+        .wallpaper-thumb {{
+            border-radius: 8px;
+        }}
+        .wallpaper-label {{
+            color: {fg_dim};
+            font-size: 11px;
+        }}
+        flowboxchild {{
+            border-radius: 10px;
+            padding: 4px;
+            border: 2px solid transparent;
+        }}
+        flowboxchild:selected {{
+            border-color: {accent};
+            background-color: {bg_hl};
+        }}
+        flowboxchild:hover {{
+            background-color: {accent_dim};
+            border-radius: 10px;
+        }}
+        entry {{
+            background-color: {bg_hl};
+            color: {fg};
+            border-radius: 6px;
+            padding: 6px 10px;
+            border: 1px solid {accent_dim};
+            caret-color: {fg};
+        }}
+        entry:focus {{
+            border-color: {accent};
+        }}
+        button {{
+            background-color: {bg_hl};
+            color: {fg};
+            border-radius: 6px;
+            border: 1px solid {accent_dim};
+        }}
+        button:hover {{
+            background-color: {accent_dim};
+        }}
+        checkbutton {{
+            color: {fg};
+        }}
+        .navigation-sidebar row, stackswitcher button {{
+            color: {fg};
+        }}
+        .navigation-sidebar row:selected, stackswitcher button:checked {{
+            background-color: {accent_dim};
+            color: {fg};
+        }}
+        scrolledwindow {{
+            background-color: {bg};
+        }}
+        .settings-group {{
+            background-color: {bg_hl};
+            border-radius: 10px;
+            padding: 12px;
+            margin: 6px 0;
+        }}
+        .settings-label {{
+            color: {fg_dim};
+            font-size: 12px;
+        }}
+        .settings-value {{
+            color: {fg};
+        }}
+        """
+        provider = Gtk.CssProvider()
+        provider.load_from_string(css)
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(), provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        )
+
+    # ── Local tab ──
+
+    def _build_local_tab(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        box.set_margin_start(10)
+        box.set_margin_end(10)
+        box.set_margin_top(8)
+
+        # Search
+        self.local_search = Gtk.SearchEntry(placeholder_text="Search local wallpapers...")
+        self.local_search.connect("search-changed", self._on_local_search)
+        box.append(self.local_search)
+
+        # Grid
+        scroll = Gtk.ScrolledWindow(vexpand=True)
+        self.local_flow = Gtk.FlowBox()
+        self.local_flow.set_valign(Gtk.Align.START)
+        self.local_flow.set_max_children_per_line(5)
+        self.local_flow.set_min_children_per_line(3)
+        self.local_flow.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        self.local_flow.set_homogeneous(True)
+        self.local_flow.connect("child-activated", self._on_local_activated)
+        scroll.set_child(self.local_flow)
+        box.append(scroll)
+
+        # Status
+        self.local_status = Gtk.Label(label="Loading...")
+        self.local_status.add_css_class("settings-label")
+        box.append(self.local_status)
+
+        return box
+
+    def _load_local_tiles(self):
+        walls = list_local_wallpapers()
+        current = ""
+        cp = HOME / ".cache" / "hypr" / "current_wallpaper"
+        if cp.exists():
+            current = cp.read_text().strip()
+
+        for wall in walls:
+            thumb = make_thumb(wall)
+            rel = str(wall.relative_to(WALL_DIR))
+            label = rel.rsplit(".", 1)[0]
+            GLib.idle_add(self._add_local_tile, thumb, label, wall)
+
+        GLib.idle_add(self.local_status.set_label, f"{len(walls)} wallpapers")
+
+    def _add_local_tile(self, thumb, label, full_path):
+        tile = WallpaperTile(thumb, label, full_path=full_path)
+        self.local_flow.append(tile)
+        return False
+
+    def _on_local_search(self, entry):
+        query = entry.get_text().lower()
+        child = self.local_flow.get_first_child()
+        while child:
+            box = child.get_child()
+            lbl = None
+            c = box.get_first_child()
+            while c:
+                if isinstance(c, Gtk.Label):
+                    lbl = c
+                    break
+                c = c.get_next_sibling()
+            if lbl:
+                child.set_visible(query in lbl.get_label().lower())
+            child = child.get_next_sibling()
+
+    def _on_local_activated(self, flow, child):
+        if child.full_path:
+            threading.Thread(
+                target=apply_wallpaper,
+                args=(child.full_path, self.retheme),
+                daemon=True,
+            ).start()
+            self.local_status.set_label(f"Applied: {child.full_path.name}")
+
+    # ── Wallhaven tab ──
+
+    def _build_wallhaven_tab(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        box.set_margin_start(10)
+        box.set_margin_end(10)
+        box.set_margin_top(8)
+
+        # Search bar
+        search_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        self.wh_search = Gtk.SearchEntry(placeholder_text="Search Wallhaven...")
+        self.wh_search.set_text(self.conf.get("query", ""))
+        self.wh_search.set_hexpand(True)
+        self.wh_search.connect("activate", self._on_wh_search)
+        search_box.append(self.wh_search)
+
+        search_btn = Gtk.Button(label="Search")
+        search_btn.connect("clicked", self._on_wh_search)
+        search_box.append(search_btn)
+        box.append(search_box)
+
+        # Grid
+        scroll = Gtk.ScrolledWindow(vexpand=True)
+        self.wh_flow = Gtk.FlowBox()
+        self.wh_flow.set_valign(Gtk.Align.START)
+        self.wh_flow.set_max_children_per_line(5)
+        self.wh_flow.set_min_children_per_line(3)
+        self.wh_flow.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        self.wh_flow.set_homogeneous(True)
+        self.wh_flow.connect("child-activated", self._on_wh_activated)
+        scroll.set_child(self.wh_flow)
+        box.append(scroll)
+
+        # Pagination
+        page_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        page_box.set_halign(Gtk.Align.CENTER)
+        page_box.set_margin_bottom(8)
+
+        prev_btn = Gtk.Button(label="◀ Prev")
+        prev_btn.connect("clicked", lambda _: self._wh_change_page(-1))
+        page_box.append(prev_btn)
+
+        self.wh_page_label = Gtk.Label(label="Page 1")
+        page_box.append(self.wh_page_label)
+
+        next_btn = Gtk.Button(label="Next ▶")
+        next_btn.connect("clicked", lambda _: self._wh_change_page(1))
+        page_box.append(next_btn)
+
+        box.append(page_box)
+
+        # Status
+        self.wh_status = Gtk.Label(label="Press Search or Enter to browse")
+        self.wh_status.add_css_class("settings-label")
+        box.append(self.wh_status)
+
+        return box
+
+    def _on_wh_search(self, *_args):
+        query = self.wh_search.get_text()
+        self.wh_page = 1
+        self.wh_status.set_label("Searching...")
+        threading.Thread(target=self._load_wh_results, args=(query,), daemon=True).start()
+
+    def _load_wh_results(self, query):
+        self.conf = read_conf()
+        items = wh_search(self.conf, query=query, page=self.wh_page)
+        self.wh_items = items
+
+        # Download thumbs
+        for item in items:
+            wh_download_thumb(item)
+
+        GLib.idle_add(self._populate_wh_grid, items)
+
+    def _populate_wh_grid(self, items):
+        # Clear existing
+        while True:
+            child = self.wh_flow.get_first_child()
+            if child is None:
+                break
+            self.wh_flow.remove(child)
+
+        for item in items:
+            tp = wh_thumb_path(item)
+            res = item.get("resolution", "?")
+            label = f"{item['id']}  {res}"
+            tile = WallpaperTile(tp, label, wh_item=item)
+            self.wh_flow.append(tile)
+
+        self.wh_page_label.set_label(f"Page {self.wh_page}")
+        self.wh_status.set_label(f"{len(items)} results")
+        return False
+
+    def _wh_change_page(self, delta):
+        self.wh_page = max(1, self.wh_page + delta)
+        query = self.wh_search.get_text()
+        self.wh_status.set_label("Loading...")
+        threading.Thread(target=self._load_wh_results, args=(query,), daemon=True).start()
+
+    def _on_wh_activated(self, flow, child):
+        if child.wh_item:
+            self.wh_status.set_label(f"Downloading {child.wh_item['id']}...")
+            threading.Thread(
+                target=self._download_and_apply_wh, args=(child.wh_item,), daemon=True
+            ).start()
+
+    def _download_and_apply_wh(self, item):
+        path = wh_download_full(item)
+        if path:
+            apply_wallpaper(path, self.retheme)
+            GLib.idle_add(self.wh_status.set_label, f"Applied: {path.name}")
+        else:
+            GLib.idle_add(self.wh_status.set_label, "Download failed")
+
+    # ── Theme toggle ──
+
+    def _on_theme_toggled(self, btn):
+        self.retheme = btn.get_active()
+        write_theme_state(self.retheme)
+
+    # ── Settings ──
+
+    def _on_settings_clicked(self, _btn):
+        dialog = Adw.Dialog()
+        dialog.set_title("Wallhaven Settings")
+        dialog.set_content_width(480)
+        dialog.set_content_height(560)
+
+        self.conf = read_conf()
+
+        page = Adw.PreferencesPage()
+
+        # ── Source group ──
+        src_group = Adw.PreferencesGroup(title="Source")
+        source_row = Adw.ComboRow(title="Wallpaper source")
+        source_model = Gtk.StringList.new(["Local only", "Wallhaven only", "Both"])
+        source_row.set_model(source_model)
+        src_map = {"local": 0, "wallhaven": 1, "both": 2}
+        source_row.set_selected(src_map.get(self.conf.get("source", "local"), 0))
+        source_row.connect("notify::selected", self._on_source_changed)
+        src_group.add(source_row)
+        page.add(src_group)
+
+        # ── Search group ──
+        search_group = Adw.PreferencesGroup(title="Search")
+
+        query_row = Adw.EntryRow(title="Default query")
+        query_row.set_text(self.conf.get("query", ""))
+        query_row.connect("changed", lambda r: self._conf_update("query", r.get_text()))
+        search_group.add(query_row)
+
+        sort_row = Adw.ComboRow(title="Sorting")
+        sort_model = Gtk.StringList.new(["random", "toplist", "hot", "latest", "relevance"])
+        sort_row.set_model(sort_model)
+        sort_opts = ["random", "toplist", "hot", "latest", "relevance"]
+        current_sort = self.conf.get("sorting", "random")
+        sort_row.set_selected(sort_opts.index(current_sort) if current_sort in sort_opts else 0)
+        sort_row.connect("notify::selected", lambda r, _:
+            self._conf_update("sorting", sort_opts[r.get_selected()]))
+        search_group.add(sort_row)
+        page.add(search_group)
+
+        # ── Filters group ──
+        filter_group = Adw.PreferencesGroup(title="Filters")
+
+        cats = self.conf.get("categories", "111")
+        self._cat_checks = {}
+        for i, name in enumerate(["General", "Anime", "People"]):
+            row = Adw.SwitchRow(title=name)
+            row.set_active(len(cats) > i and cats[i] == "1")
+            row.connect("notify::active", self._on_cat_toggled)
+            self._cat_checks[i] = row
+            filter_group.add(row)
+
+        pur = self.conf.get("purity", "100")
+        self._pur_checks = {}
+        for i, name in enumerate(["SFW", "Sketchy", "NSFW"]):
+            row = Adw.SwitchRow(title=name)
+            row.set_active(len(pur) > i and pur[i] == "1")
+            row.connect("notify::active", self._on_pur_toggled)
+            self._pur_checks[i] = row
+            filter_group.add(row)
+
+        res_row = Adw.ComboRow(title="Min resolution")
+        res_model = Gtk.StringList.new(["2560x1440", "3840x2160", "1920x1080", "Any"])
+        res_row.set_model(res_model)
+        res_opts = ["2560x1440", "3840x2160", "1920x1080", ""]
+        current_res = self.conf.get("atleast", "2560x1440")
+        res_row.set_selected(res_opts.index(current_res) if current_res in res_opts else 0)
+        res_row.connect("notify::selected", lambda r, _:
+            self._conf_update("atleast", res_opts[r.get_selected()]))
+        filter_group.add(res_row)
+
+        ratio_row = Adw.ComboRow(title="Aspect ratio")
+        ratio_model = Gtk.StringList.new(["16x9", "21x9", "16x10", "Any"])
+        ratio_row.set_model(ratio_model)
+        ratio_opts = ["16x9", "21x9", "16x10", ""]
+        current_ratio = self.conf.get("ratios", "16x9")
+        ratio_row.set_selected(ratio_opts.index(current_ratio) if current_ratio in ratio_opts else 0)
+        ratio_row.connect("notify::selected", lambda r, _:
+            self._conf_update("ratios", ratio_opts[r.get_selected()]))
+        filter_group.add(ratio_row)
+        page.add(filter_group)
+
+        # ── Account group ──
+        acct_group = Adw.PreferencesGroup(title="Account")
+        key_row = Adw.PasswordEntryRow(title="API key")
+        key_row.set_text(self.conf.get("api_key", ""))
+        key_row.connect("changed", lambda r: self._conf_update("api_key", r.get_text()))
+        acct_group.add(key_row)
+        page.add(acct_group)
+
+        toolbar = Adw.ToolbarView()
+        toolbar.add_top_bar(Adw.HeaderBar())
+        toolbar.set_content(page)
+        dialog.set_child(toolbar)
+
+        win = self.get_active_window()
+        dialog.present(win)
+
+    def _on_source_changed(self, row, _pspec):
+        src_map = {0: "local", 1: "wallhaven", 2: "both"}
+        self._conf_update("source", src_map.get(row.get_selected(), "local"))
+
+    def _on_cat_toggled(self, *_args):
+        cats = "".join("1" if self._cat_checks[i].get_active() else "0" for i in range(3))
+        self._conf_update("categories", cats)
+
+    def _on_pur_toggled(self, *_args):
+        pur = "".join("1" if self._pur_checks[i].get_active() else "0" for i in range(3))
+        self._conf_update("purity", pur)
+
+    def _conf_update(self, key, value):
+        self.conf[key] = value
+        write_conf(self.conf)
+
+
+def main():
+    app = WallpaperApp()
+    app.run(None)
+
+
+if __name__ == "__main__":
+    main()
