@@ -36,7 +36,7 @@ CONF_FILE = HOME / ".config" / "hypr-os" / "wallhaven.conf"
 STATE_FILE = HOME / ".cache" / "hypr-os" / "wallpaper-browser.state"
 HYPR_OS = Path(os.environ.get("HYPR_OS_DIR", HOME / "dev" / "hypr-os"))
 THEME_SH = HYPR_OS / "scripts" / "theme.sh"
-THUMB_SIZE = 220
+THUMB_SIZE = 320
 
 CONF_DEFAULTS = {
     "api_key": "", "query": "", "categories": "111", "purity": "100",
@@ -96,19 +96,21 @@ def read_color(name, fallback):
 
 # ── Thumbnail helpers ──
 
+THUMB_H = int(THUMB_SIZE * 9 / 16)  # 16:9 landscape
+
+
 def make_thumb(src: Path) -> Path:
     rel = str(src.relative_to(WALL_DIR))
     mtime = int(src.stat().st_mtime)
     h = hashlib.md5(rel.encode()).hexdigest()[:10]
-    thumb = CACHE_DIR / f"{THUMB_SIZE}x{THUMB_SIZE}_{mtime}_{h}.png"
+    thumb = CACHE_DIR / f"{THUMB_SIZE}x{THUMB_H}_{mtime}_{h}.png"
     if not thumb.exists():
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        # Remove stale
         for old in CACHE_DIR.glob(f"*_{h}.png"):
             old.unlink(missing_ok=True)
         subprocess.run(
-            ["magick", str(src), "-resize", f"{THUMB_SIZE}x{THUMB_SIZE}^",
-             "-gravity", "center", "-extent", f"{THUMB_SIZE}x{THUMB_SIZE}",
+            ["magick", str(src), "-resize", f"{THUMB_SIZE}x{THUMB_H}^",
+             "-gravity", "center", "-extent", f"{THUMB_SIZE}x{THUMB_H}",
              "-strip", str(thumb)],
             capture_output=True,
         )
@@ -255,16 +257,17 @@ class WallpaperTile(Gtk.FlowBoxChild):
 
         if thumb_path and thumb_path.exists():
             try:
-                pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                    str(thumb_path), THUMB_SIZE, THUMB_SIZE, True
-                )
-                img = Gtk.Image.new_from_pixbuf(pb)
+                texture = Gdk.Texture.new_from_filename(str(thumb_path))
+                img = Gtk.Picture.new_for_paintable(texture)
+                img.set_content_fit(Gtk.ContentFit.COVER)
             except Exception:
                 img = Gtk.Image.new_from_icon_name("image-missing")
+                img.set_pixel_size(THUMB_SIZE)
         else:
             img = Gtk.Image.new_from_icon_name("image-loading")
+            img.set_pixel_size(THUMB_SIZE)
 
-        img.set_size_request(THUMB_SIZE, THUMB_SIZE)
+        img.set_size_request(THUMB_SIZE, THUMB_H)
         img.add_css_class("wallpaper-thumb")
         box.append(img)
 
@@ -288,7 +291,7 @@ class WallpaperApp(Adw.Application):
     def do_activate(self):
         win = Adw.ApplicationWindow(application=self)
         win.set_title("Wallpaper Manager")
-        win.set_default_size(1100, 750)
+        win.set_default_size(1400, 850)
 
         # ── Custom CSS from theme ──
         self._apply_theme_css(win)
