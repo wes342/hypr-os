@@ -23,7 +23,9 @@ rofi_pick() {
 
 rofi_input() {
     local prompt="$1" current="$2"
-    echo "$current" | rofi -dmenu -theme "$SETTINGS_RASI" -p "$prompt"
+    # -filter pre-fills the text box so user can edit in place.
+    # Empty stdin so there are no list entries to filter against.
+    rofi -dmenu -theme "$SETTINGS_RASI" -p "$prompt" -filter "$current" < /dev/null
 }
 
 cat_label() {
@@ -122,36 +124,44 @@ while true; do
         *Categories*)
             cats="$local_categories"
             while true; do
-                pick=$(rofi_pick "󰉋 Toggle categories (current: $(cat_label "$cats"))" \
-                    "$( [[ ${cats:0:1} == 1 ]] && echo '󰄲' || echo '󰄮' )  General" \
-                    "$( [[ ${cats:1:1} == 1 ]] && echo '󰄲' || echo '󰄮' )  Anime" \
-                    "$( [[ ${cats:2:1} == 1 ]] && echo '󰄲' || echo '󰄮' )  People" \
-                    "  Apply") || break
+                local gen_icon="󰄮" ani_icon="󰄮" ppl_icon="󰄮"
+                [[ "${cats:0:1}" == "1" ]] && gen_icon="󰄲"
+                [[ "${cats:1:1}" == "1" ]] && ani_icon="󰄲"
+                [[ "${cats:2:1}" == "1" ]] && ppl_icon="󰄲"
+
+                pick=$(rofi_pick "󰉋 Categories" \
+                    "$gen_icon  General" \
+                    "$ani_icon  Anime" \
+                    "$ppl_icon  People" \
+                    "󰄬  Done") || { conf_set categories "$cats"; break; }
                 case "$pick" in
-                    *General*) cats=$(toggle_bit "$cats" 0) ;;
-                    *Anime*)   cats=$(toggle_bit "$cats" 1) ;;
-                    *People*)  cats=$(toggle_bit "$cats" 2) ;;
-                    *Apply*)   break ;;
+                    *General*) cats=$(toggle_bit "$cats" 0); conf_set categories "$cats" ;;
+                    *Anime*)   cats=$(toggle_bit "$cats" 1); conf_set categories "$cats" ;;
+                    *People*)  cats=$(toggle_bit "$cats" 2); conf_set categories "$cats" ;;
+                    *Done*)    break ;;
                 esac
             done
-            conf_set categories "$cats"
             ;;
         *Purity*)
             pur="$local_purity"
             while true; do
-                pick=$(rofi_pick "󰒃 Toggle purity (current: $(pur_label "$pur"))" \
-                    "$( [[ ${pur:0:1} == 1 ]] && echo '󰄲' || echo '󰄮' )  SFW" \
-                    "$( [[ ${pur:1:1} == 1 ]] && echo '󰄲' || echo '󰄮' )  Sketchy" \
-                    "$( [[ ${pur:2:1} == 1 ]] && echo '󰄲' || echo '󰄮' )  NSFW (needs API key)" \
-                    "  Apply") || break
+                local sfw_icon="󰄮" sketchy_icon="󰄮" nsfw_icon="󰄮"
+                [[ "${pur:0:1}" == "1" ]] && sfw_icon="󰄲"
+                [[ "${pur:1:1}" == "1" ]] && sketchy_icon="󰄲"
+                [[ "${pur:2:1}" == "1" ]] && nsfw_icon="󰄲"
+
+                pick=$(rofi_pick "󰒃 Purity" \
+                    "$sfw_icon  SFW" \
+                    "$sketchy_icon  Sketchy" \
+                    "$nsfw_icon  NSFW" \
+                    "󰄬  Done") || { conf_set purity "$pur"; break; }
                 case "$pick" in
-                    *SFW*)     pur=$(toggle_bit "$pur" 0) ;;
-                    *Sketchy*) pur=$(toggle_bit "$pur" 1) ;;
-                    *NSFW*)    pur=$(toggle_bit "$pur" 2) ;;
-                    *Apply*)   break ;;
+                    *SFW*)     pur=$(toggle_bit "$pur" 0); conf_set purity "$pur" ;;
+                    *Sketchy*) pur=$(toggle_bit "$pur" 1); conf_set purity "$pur" ;;
+                    *NSFW*)    pur=$(toggle_bit "$pur" 2); conf_set purity "$pur" ;;
+                    *Done*)    break ;;
                 esac
             done
-            conf_set purity "$pur"
             ;;
         *"Min resolution"*)
             new=$(rofi_pick "󰍹 Minimum resolution" \
