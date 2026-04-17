@@ -157,9 +157,30 @@ Hyprland
 
 ## Step 5: Post-Install
 
-1. Add wallpapers to `~/Pictures/Wallpaper/`
+1. Add wallpapers to `~/Pictures/Wallpaper/` (subfolders work too)
 2. Press `SUPER + B` to pick a random wallpaper and apply theming
 3. Configure Firefox, Discord, Steam etc. to your preference
+
+### Snapper snapshots (btrfs)
+
+If your system uses btrfs with snapper (the archinstall btrfs profile
+sets this up), enable user-level access so the snapshot manager works
+without sudo:
+
+```bash
+sudo sed -i 's/ALLOW_USERS=""/ALLOW_USERS="YOUR_USERNAME"/' \
+    /etc/snapper/configs/root /etc/snapper/configs/home
+```
+
+Then press `SUPER + ALT + S` to open the snapshot manager. It supports:
+- **Create** snapshots (root or home) with optional descriptions
+- **List** all snapshots with date, type, and description
+- **Delete** snapshots (with confirmation)
+- **Restore** to a previous snapshot (with double confirmation)
+- **Compare** two snapshots (shows file diff)
+
+Recommended: create a snapshot before major system changes
+(kernel upgrades, big package installs, config experiments).
 
 ## Cleanup: remove duplicates installed by archinstall's Hyprland profile
 

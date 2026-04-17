@@ -9,6 +9,7 @@ A clean, gaming-focused Hyprland desktop environment for Arch Linux with Nvidia 
 - **Gaming ready** -- Nvidia/Wayland optimized, Steam, Gamescope, MangoHud preconfigured
 - **One-command install** -- clone and run `install.sh` on a fresh Arch install
 - **Multi-monitor support** -- designed for 1440p primary with easy second monitor expansion
+- **Snapshot manager** -- rofi-based btrfs/snapper GUI for create, restore, delete, compare
 
 ## Quick Start
 
@@ -86,6 +87,9 @@ See [docs/KEYBINDS.md](docs/KEYBINDS.md) for the full list. Highlights:
 | `SUPER + ALT + F` | Fullscreen |
 | `SUPER + B` | Random wallpaper + re-theme |
 | `SUPER + V` | Toggle floating |
+| `SUPER + ALT + S` | Snapper snapshot manager |
+| `SUPER + ALT + B` | Wallpaper browser |
+| `SUPER + ALT + E` | Eye candy effects |
 | `SUPER + 1-0` | Switch workspace |
 
 ## Theming
@@ -161,11 +165,17 @@ hypr-os/
 │   ├── ncmpcpp/        # Music player
 │   ├── ranger/         # File manager (TUI)
 │   ├── htop/           # Process viewer
+│   ├── alacritty/      # Terminal (themed colors generated)
+│   ├── bash/           # Shell env (ble.sh, aliases, starship)
 │   ├── hyprlock/       # Lock screen
-│   └── hypridle/       # Idle daemon
+│   ├── hypridle/       # Idle daemon
+│   └── sddm/          # Login screen theme
 ├── scripts/
 │   ├── wallpaper.sh    # Random wallpaper + theme update
-│   └── theme.sh        # Generate and apply theme from colors
+│   ├── theme.sh        # Generate and apply theme from colors
+│   ├── powermenu.sh    # Rofi power menu
+│   ├── keybinds.sh     # Keybind cheatsheet
+│   └── install-sddm-theme.sh
 ├── docs/               # Documentation
 └── install.sh          # One-command setup
 ```
