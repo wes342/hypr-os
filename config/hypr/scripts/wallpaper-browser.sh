@@ -452,6 +452,7 @@ while true; do
         -kb-custom-1 "Alt+t" \
         -kb-custom-2 "Alt+l" \
         -kb-custom-3 "Alt+w" \
+        -kb-screenshot "" \
         -kb-custom-4 "Alt+s" \
         -kb-custom-5 "Alt+n" \
         -kb-custom-6 "Alt+p" \
