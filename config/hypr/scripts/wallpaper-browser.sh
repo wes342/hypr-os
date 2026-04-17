@@ -232,12 +232,13 @@ while true; do
 
     # Clickable control row + wallpaper entries
     {
-        # Theme toggle (clickable checkbox)
+        # Clickable controls (two separate entries)
         if [[ "$STATE" == "on" ]]; then
-            echo "󰄲 Re-theme ON    │  ⚙ Settings"
+            echo "󰄲 Re-theme: ON  (click to toggle)"
         else
-            echo "󰄮 Re-theme OFF   │  ⚙ Settings"
+            echo "󰄮 Re-theme: OFF (click to toggle)"
         fi
+        echo "⚙ Settings"
 
         case "$MODE" in
             local)     build_local_entries ;;
@@ -246,8 +247,8 @@ while true; do
         esac
     } > "$ENTRIES_FILE"
 
-    # Offset CURRENT_INDEX by 1 for the control row
-    [[ -n "$CURRENT_INDEX" ]] && CURRENT_INDEX=$((CURRENT_INDEX + 1))
+    # Offset CURRENT_INDEX by 2 for the two control rows
+    [[ -n "$CURRENT_INDEX" ]] && CURRENT_INDEX=$((CURRENT_INDEX + 2))
 
     ACTIVE_ARGS=()
     [[ -n "$CURRENT_INDEX" && "$MODE" != "wallhaven" ]] && ACTIVE_ARGS=( -a "$CURRENT_INDEX" )
