@@ -1,0 +1,78 @@
+/*
+ * Settings form -- single-column list, compact rows, no icons.
+ */
+
+@import "colors.rasi"
+
+configuration {
+    show-icons: false;
+    font:       "Iosevka Nerd Font 13";
+}
+
+* {
+    background-color: @bg;
+    text-color:       @fg;
+}
+
+window {
+    border-radius: 12px;
+    width:         520px;
+    padding:       0;
+    border:        2px solid;
+    border-color:  @accent-dim;
+    location:      center;
+}
+
+mainbox {
+    children: [ inputbar, listview ];
+    padding:  16px;
+    spacing:  12px;
+}
+
+inputbar {
+    children:         [ prompt ];
+    background-color: @bg-highlight;
+    padding:          10px 16px;
+    border-radius:    8px;
+}
+
+prompt {
+    background-color: inherit;
+    text-color:       @accent;
+    font:             "Iosevka Nerd Font Bold 14";
+}
+
+listview {
+    columns:      1;
+    lines:        12;
+    scrollbar:    false;
+    cycle:        false;
+    dynamic:      false;
+    fixed-height: true;
+    spacing:      2px;
+}
+
+element {
+    padding:       8px 14px;
+    border-radius: 6px;
+    expand:        true;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color: transparent;
+    text-color:       @fg;
+}
+
+element selected.normal {
+    background-color: @accent-dim;
+    text-color:       @fg;
+}
+
+element-text {
+    background-color: inherit;
+    text-color:       inherit;
+    expand:           true;
+    horizontal-align: 0.0;
+    vertical-align:   0.5;
+}
