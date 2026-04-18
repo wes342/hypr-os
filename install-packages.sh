@@ -55,8 +55,8 @@ PACMAN_PKGS=(
     # System / process monitors
     btop htop lm_sensors nvtop
 
-    # File manager + thumbnailers + archives
-    thunar thunar-archive-plugin tumbler ffmpegthumbnailer ark ranger
+    # File manager + thumbnailers + archives + image viewer
+    thunar thunar-archive-plugin tumbler ffmpegthumbnailer ark ranger imv
 
     # Tooling the scripts rely on
     imagemagick jq python curl bc

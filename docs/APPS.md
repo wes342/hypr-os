@@ -102,6 +102,17 @@ Idle management: dims screen after 5 min, locks after 10 min, suspends after 30 
 
 Process viewer with custom color scheme.
 
+## imv
+
+Wayland-native image viewer. Lightweight and keyboard-driven.
+
+- `Left/Right` or `n/p` to cycle images in directory
+- `+/-` or mouse scroll to zoom
+- `r` to fit to window, `a` for actual size
+- `f` to toggle fullscreen
+
+Set as default: `xdg-mime default imv-dir.desktop image/png image/jpeg image/webp`
+
 ## Gaming Apps
 
 **Steam:** Launch with `gamescope` for better Wayland compatibility. MangoHud can be enabled per-game via launch options: `mangohud %command%`.
