@@ -335,6 +335,7 @@ pkill -USR2 cava 2>/dev/null || true
 if pgrep -x eww >/dev/null 2>&1; then
     _dimmer=$(eww get dimmer-level 2>/dev/null || echo 0)
     eww reload 2>/dev/null || true
+    sleep 1
     eww update dimmer-level="$_dimmer" 2>/dev/null || true
 fi
 
