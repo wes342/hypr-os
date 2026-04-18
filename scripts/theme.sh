@@ -330,7 +330,7 @@ pkill -USR1 kitty 2>/dev/null || true
 # Cava
 pkill -USR2 cava 2>/dev/null || true
 
-# Eww (kept for future widgets) — only reload if running
+# Eww sensor panel — reload to pick up new colors.css
 pgrep -x eww >/dev/null 2>&1 && eww reload 2>/dev/null || true
 
 # Notify

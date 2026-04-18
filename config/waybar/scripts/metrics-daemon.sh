@@ -138,12 +138,13 @@ rule() {
 }
 
 emit_module() {
-    local kind="$1" text="$2" tooltip="$3" cls="$4"
+    local kind="$1" text="$2" tooltip="$3" cls="$4" extra="${5:-{\}}"
     write_atomic "$OUT/${kind}.json" jq -nc \
         --arg text "$text" \
         --arg tooltip "$tooltip" \
         --arg cls "$cls" \
-        '{text:$text,tooltip:$tooltip,class:$cls,alt:$cls}'
+        --argjson extra "$extra" \
+        '{text:$text,tooltip:$tooltip,class:$cls,alt:$cls} + $extra'
 }
 
 # ────────────────────────────────────────────
@@ -242,7 +243,17 @@ collect_cpu() {
     tt+="  <tt><span foreground=\"$COLOR_BAR\" size=\"large\">${hist_spark}</span></tt>"
 
     local wb_text=" ${temp}°"
-    emit_module "cpu" "$wb_text" "$tt" "$status"
+    local extra
+    extra=$(jq -nc \
+        --arg model "$CPU_MODEL" \
+        --argjson temp_c "$temp" \
+        --argjson usage_pct "$usage" \
+        --argjson freq_mhz "$freq" \
+        --argjson cores_count "$nproc_count" \
+        --arg status "$status" \
+        --argjson cores "[$cores_csv]" \
+        '{model:$model,temp_c:$temp_c,usage_pct:$usage_pct,freq_mhz:$freq_mhz,cores_count:$cores_count,status:$status,cores:$cores}')
+    emit_module "cpu" "$wb_text" "$tt" "$status" "$extra"
 }
 
 # ────────────────────────────────────────────
@@ -311,7 +322,21 @@ collect_gpu() {
     tt+="  <tt><span foreground=\"$COLOR_BAR\" size=\"large\">${hist_spark}</span></tt>"
 
     local wb_text=" ${temp}°"
-    emit_module "gpu" "$wb_text" "$tt" "$status"
+    local extra
+    extra=$(jq -nc \
+        --arg name "$name" \
+        --argjson temp_c "$temp" \
+        --argjson util_pct "$util" \
+        --argjson mem_used_mib "$mem_used" \
+        --argjson mem_total_mib "$mem_total" \
+        --argjson mem_pct "$mem_pct" \
+        --argjson power_w "$power_int" \
+        --argjson clock_gfx_mhz "$clk_gfx" \
+        --argjson clock_mem_mhz "$clk_mem" \
+        --argjson fan_pct "$fan" \
+        --arg status "$status" \
+        '{name:$name,temp_c:$temp_c,util_pct:$util_pct,mem_used_mib:$mem_used_mib,mem_total_mib:$mem_total_mib,mem_pct:$mem_pct,power_w:$power_w,clock_gfx_mhz:$clock_gfx_mhz,clock_mem_mhz:$clock_mem_mhz,fan_pct:$fan_pct,status:$status}')
+    emit_module "gpu" "$wb_text" "$tt" "$status" "$extra"
 }
 
 # ────────────────────────────────────────────
@@ -381,7 +406,19 @@ collect_ram() {
     tt+="  <tt><span foreground=\"$COLOR_BAR\" size=\"large\">${hist_spark}</span></tt>"
 
     local wb_text="󰘚 ${used_pct}%"
-    emit_module "ram" "$wb_text" "$tt" "$status"
+    local extra
+    extra=$(jq -nc \
+        --arg used_gb "$used_gb" \
+        --arg total_gb "$total_gb" \
+        --arg available_gb "$available_gb" \
+        --arg cached_gb "$cached_gb" \
+        --argjson used_pct "$used_pct" \
+        --arg swap_used_gb "$swap_used_gb" \
+        --arg swap_total_gb "$swap_total_gb" \
+        --argjson swap_pct "$swap_pct" \
+        --arg status "$status" \
+        '{used_gb:$used_gb,total_gb:$total_gb,available_gb:$available_gb,cached_gb:$cached_gb,used_pct:$used_pct,swap_used_gb:$swap_used_gb,swap_total_gb:$swap_total_gb,swap_pct:$swap_pct,status:$status}')
+    emit_module "ram" "$wb_text" "$tt" "$status" "$extra"
 }
 
 # ────────────────────────────────────────────
@@ -449,8 +486,122 @@ collect_storage() {
     # Trim trailing newline
     tt="${tt%$'\n'}"
 
+    # Build structured drives array for eww
+    local drives_json="["
+    local first=true
+    for row in "${lines[@]}"; do
+        IFS='|' read -r _src _mnt _fstype _size_gb _used_gb _pct_int <<< "$row"
+        $first || drives_json+=","
+        first=false
+        drives_json+=$(jq -nc \
+            --arg mount "$_mnt" \
+            --arg fstype "$_fstype" \
+            --arg size_gb "$_size_gb" \
+            --arg used_gb "$_used_gb" \
+            --argjson used_pct "$_pct_int" \
+            '{mount:$mount,fstype:$fstype,size_gb:$size_gb,used_gb:$used_gb,used_pct:$used_pct}')
+    done
+    drives_json+="]"
+
     local wb_text="󰋊 ${root_pct}%"
-    emit_module "storage" "$wb_text" "$tt" "$status"
+    local extra
+    extra=$(jq -nc \
+        --argjson root_pct "$root_pct" \
+        --argjson drives "$drives_json" \
+        --arg status "$status" \
+        '{root_pct:$root_pct,drives:$drives,status:$status}')
+    emit_module "storage" "$wb_text" "$tt" "$status" "$extra"
+}
+
+# ────────────────────────────────────────────
+# Network
+# ────────────────────────────────────────────
+collect_net() {
+    # Find the primary network interface (first non-lo with a default route)
+    local iface
+    iface=$(ip -o route get 8.8.8.8 2>/dev/null | awk '{print $5; exit}')
+    [[ -z "$iface" ]] && iface=$(ip -o link show up 2>/dev/null | awk -F': ' '!/lo/{print $2; exit}')
+    [[ -z "$iface" ]] && { emit_module "net" "󰛵 n/a" "No network" "unavailable" '{"status":"unavailable"}'; return; }
+
+    local rx_bytes tx_bytes
+    rx_bytes=$(<"/sys/class/net/$iface/statistics/rx_bytes" 2>/dev/null) || rx_bytes=0
+    tx_bytes=$(<"/sys/class/net/$iface/statistics/tx_bytes" 2>/dev/null) || tx_bytes=0
+
+    local prev="$STATE/net.prev"
+    local prev_rx=0 prev_tx=0 prev_ts=0
+    [[ -r "$prev" ]] && IFS='|' read -r prev_rx prev_tx prev_ts < "$prev"
+
+    local now_ts; now_ts=$(date +%s)
+    local dt=$(( now_ts - prev_ts ))
+    (( dt < 1 )) && dt=1
+
+    local rx_speed=$(( (rx_bytes - prev_rx) / dt ))
+    local tx_speed=$(( (tx_bytes - prev_tx) / dt ))
+    (( rx_speed < 0 )) && rx_speed=0
+    (( tx_speed < 0 )) && tx_speed=0
+
+    printf '%s|%s|%s\n' "$rx_bytes" "$tx_bytes" "$now_ts" > "$prev"
+
+    # Human-readable speeds
+    local rx_hr tx_hr
+    if (( rx_speed >= 1073741824 )); then rx_hr="$(awk -v v=$rx_speed 'BEGIN{printf "%.1f GB/s", v/1073741824}')"
+    elif (( rx_speed >= 1048576 )); then rx_hr="$(awk -v v=$rx_speed 'BEGIN{printf "%.1f MB/s", v/1048576}')"
+    elif (( rx_speed >= 1024 )); then    rx_hr="$(awk -v v=$rx_speed 'BEGIN{printf "%.1f KB/s", v/1024}')"
+    else rx_hr="${rx_speed} B/s"; fi
+
+    if (( tx_speed >= 1073741824 )); then tx_hr="$(awk -v v=$tx_speed 'BEGIN{printf "%.1f GB/s", v/1073741824}')"
+    elif (( tx_speed >= 1048576 )); then tx_hr="$(awk -v v=$tx_speed 'BEGIN{printf "%.1f MB/s", v/1048576}')"
+    elif (( tx_speed >= 1024 )); then    tx_hr="$(awk -v v=$tx_speed 'BEGIN{printf "%.1f KB/s", v/1024}')"
+    else tx_hr="${tx_speed} B/s"; fi
+
+    # Track download speed history as KB/s (capped at 100 for sparkline)
+    local rx_kbps=$(( rx_speed / 1024 ))
+    local sparkpct=$(( rx_kbps > 10000 ? 100 : rx_kbps * 100 / 10000 ))
+    push_hist "net_rx" "$sparkpct"
+
+    local extra
+    extra=$(jq -nc \
+        --arg iface "$iface" \
+        --argjson rx_speed "$rx_speed" \
+        --argjson tx_speed "$tx_speed" \
+        --arg rx_hr "$rx_hr" \
+        --arg tx_hr "$tx_hr" \
+        --arg status "ok" \
+        '{iface:$iface,rx_speed:$rx_speed,tx_speed:$tx_speed,rx_hr:$rx_hr,tx_hr:$tx_hr,status:$status}')
+
+    local wb_text="󰛵 ${rx_hr}"
+    emit_module "net" "$wb_text" "Network: $iface" "ok" "$extra"
+}
+
+# ────────────────────────────────────────────
+# System info
+# ────────────────────────────────────────────
+collect_system() {
+    local hostname; hostname=$(hostname 2>/dev/null || cat /etc/hostname 2>/dev/null || echo "unknown")
+    local kernel; kernel=$(uname -r)
+    local uptime_sec; uptime_sec=$(awk '{print int($1)}' /proc/uptime)
+    local up_days=$(( uptime_sec / 86400 ))
+    local up_hours=$(( (uptime_sec % 86400) / 3600 ))
+    local up_mins=$(( (uptime_sec % 3600) / 60 ))
+    local uptime_hr="${up_days}d ${up_hours}h ${up_mins}m"
+
+    local load1 load5 load15 procs
+    read -r load1 load5 load15 procs _ < /proc/loadavg
+
+    local extra
+    extra=$(jq -nc \
+        --arg hostname "$hostname" \
+        --arg kernel "$kernel" \
+        --arg uptime "$uptime_hr" \
+        --argjson uptime_sec "$uptime_sec" \
+        --arg load1 "$load1" \
+        --arg load5 "$load5" \
+        --arg load15 "$load15" \
+        --arg procs "$procs" \
+        --arg status "ok" \
+        '{hostname:$hostname,kernel:$kernel,uptime:$uptime,uptime_sec:$uptime_sec,load1:$load1,load5:$load5,load15:$load15,procs:$procs,status:$status}')
+
+    emit_module "system" "" "" "ok" "$extra"
 }
 
 # ────────────────────────────────────────────
@@ -465,8 +616,10 @@ while true; do
     collect_cpu
     collect_gpu
     collect_ram
+    collect_net
     if (( COUNTER % 8 == 0 )); then
         collect_storage
+        collect_system
     fi
     COUNTER=$((COUNTER+1))
     sleep "$INTERVAL"

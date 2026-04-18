@@ -25,6 +25,7 @@ All keyboard shortcuts. `SUPER` is the Windows/Meta key.
 |-----|--------|
 | `SUPER + F` | Full-width (maximize width, keep bar) |
 | `SUPER + ALT + F` | True fullscreen (hide bar) |
+| `SUPER + T` | Toggle tiled / scrolling layout |
 | `SUPER + P` | Pseudo-tile (dwindle) |
 | `SUPER + J` | Toggle split direction |
 | `SUPER + Arrow keys` | Move focus |

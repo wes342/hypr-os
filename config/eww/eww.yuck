@@ -1,7 +1,7 @@
 ;; ┌──────────────────────────────────────────┐
-;; │  hypr-os system metrics widgets          │
-;; │  metrics-bar (always-on icon row)        │
-;; │  + 4 dropdown windows                    │
+;; │  hypr-os eww widgets                    │
+;; │  sensor-panel — fullscreen on HDMI-A-2  │
+;; │  metrics-bar + dropdowns — primary mon  │
 ;; └──────────────────────────────────────────┘
 
 ;; ── Polled metric sources ────────────────────
@@ -9,6 +9,186 @@
 (defpoll gpu     :interval "1.5s" :initial "{}" "cat /tmp/hypr-os-metrics/gpu.json 2>/dev/null || echo '{}'")
 (defpoll ram     :interval "1.5s" :initial "{}" "cat /tmp/hypr-os-metrics/ram.json 2>/dev/null || echo '{}'")
 (defpoll storage :interval "5s"   :initial "{}" "cat /tmp/hypr-os-metrics/storage.json 2>/dev/null || echo '{}'")
+(defpoll net     :interval "2s"   :initial "{}" "cat /tmp/hypr-os-metrics/net.json 2>/dev/null || echo '{}'")
+(defpoll sysinfo :interval "10s"  :initial "{}" "cat /tmp/hypr-os-metrics/system.json 2>/dev/null || echo '{}'")
+
+;; ╔══════════════════════════════════════════╗
+;; ║            SENSOR PANEL                  ║
+;; ║  Fullscreen 1920×480 on HDMI-A-2        ║
+;; ║  Single row, 5 panels, full height      ║
+;; ╚══════════════════════════════════════════╝
+
+;; ── Sensor helpers ──────────────────────────
+
+;; Panel card wrapper
+(defwidget sensor-card [title icon ?class]
+  (box :class "sensor-card ${class ?: ''}"
+       :orientation "v"
+       :space-evenly false
+       :spacing 0
+       :vexpand true
+    (box :class "sensor-card-header"
+         :orientation "h"
+         :space-evenly false
+         :spacing 8
+      (label :class "sensor-card-icon" :text icon)
+      (label :class "sensor-card-title" :text title))
+    (box :class "sensor-card-body"
+         :orientation "v"
+         :space-evenly false
+         :spacing 0
+         :vexpand true
+      (children))))
+
+;; Circular gauge — large, readable
+(defwidget gauge [value ?thickness ?label ?status]
+  (box :class "gauge-wrap" :orientation "v" :space-evenly false :spacing 4
+       :halign "center"
+    (overlay
+      (circular-progress :class "gauge gauge-${status ?: 'ok'}"
+                         :value {value ?: 0}
+                         :start-at 75
+                         :thickness {thickness ?: 8}
+                         :clockwise true
+        (box :class "gauge-inner" :orientation "v"
+             :space-evenly false :valign "center" :halign "center"
+          (label :class "gauge-value" :text "${value ?: 0}"))))
+    (label :class "gauge-label" :text {label ?: ""})))
+
+;; Scale-based meter bar
+(defwidget sensor-meter [label value pct ?status]
+  (box :class "sensor-meter" :orientation "v" :space-evenly false :spacing 3
+    (box :orientation "h" :space-evenly false
+      (label :class "sensor-meter-label" :text label :xalign 0 :hexpand true)
+      (label :class "sensor-meter-value" :text value :xalign 1))
+    (scale :class "sensor-meter-bar sensor-meter-${status ?: 'ok'}"
+           :min 0 :max 101 :value {pct ?: 0}
+           :orientation "h" :draw-value false)))
+
+;; Stat line: icon  label  value
+(defwidget stat-line [icon label value]
+  (box :class "stat-line" :orientation "h" :space-evenly false :spacing 8
+    (label :class "stat-line-icon" :text icon)
+    (label :class "stat-line-label" :text label :hexpand true :xalign 0)
+    (label :class "stat-line-value" :text value :xalign 1)))
+
+;; ── CPU Panel ───────────────────────────────
+(defwidget cpu-panel []
+  (sensor-card :title "CPU" :icon "" :class "cpu"
+    (box :orientation "v" :space-evenly false :spacing 4 :vexpand true
+      ;; Gauge + key stats
+      (box :orientation "h" :space-evenly false :spacing 8
+        (gauge :value {cpu.temp_c ?: 0} :thickness 8
+               :label "°C" :status {cpu.status ?: "ok"})
+        (box :orientation "v" :space-evenly false :spacing 3 :valign "center" :hexpand true
+          (stat-line :icon "󰓅" :label "Usage" :value "${cpu.usage_pct ?: 0}%")
+          (stat-line :icon "󰾆" :label "Freq"  :value "${cpu.freq_mhz ?: 0} MHz")
+          (stat-line :icon "󰍛" :label "Cores" :value "${cpu.cores_count ?: 0}")))
+      ;; Usage bar
+      (sensor-meter :label "" :value "${cpu.usage_pct ?: 0}%"
+                    :pct {cpu.usage_pct ?: 0}
+                    :status {cpu.status ?: "ok"})
+      ;; Core load bars
+      (box :class "sp-core-grid" :orientation "h" :space-evenly true :spacing 1 :height 28
+        (for c in {cpu.cores ?: "[]"}
+          (box :class "sp-core sp-core-${c >= 80 ? 'hot' : c >= 50 ? 'mid' : 'cool'}"
+               :orientation "v" :space-evenly false :valign "end"
+            (box :class "sp-core-fill"
+                 :style "min-height: ${c >= 1 ? c >= 100 ? 26 : c * 26 / 100 + 1 : 1}px;"))))
+      ;; History graph
+      (graph :class "sp-graph" :value {cpu.usage_pct ?: 0}
+             :time-range "60s" :max 100 :min 0 :dynamic false
+             :thickness 2 :line-style "round" :height 30))))
+
+;; ── GPU Panel ───────────────────────────────
+(defwidget gpu-panel []
+  (sensor-card :title "GPU" :icon "" :class "gpu"
+    (box :orientation "v" :space-evenly false :spacing 4 :vexpand true
+      ;; Gauge + key stats
+      (box :orientation "h" :space-evenly false :spacing 8
+        (gauge :value {gpu.temp_c ?: 0} :thickness 8
+               :label "°C" :status {gpu.status ?: "ok"})
+        (box :orientation "v" :space-evenly false :spacing 3 :valign "center" :hexpand true
+          (stat-line :icon "󰾲" :label "Util"  :value "${gpu.util_pct ?: 0}%")
+          (stat-line :icon "󱐋" :label "Power" :value "${gpu.power_w ?: 0} W")
+          (stat-line :icon "󰈐" :label "Fan"   :value "${gpu.fan_pct ?: 0}%")))
+      ;; VRAM bar
+      (sensor-meter :label "󰍛 VRAM"
+                    :value "${gpu.mem_used_mib ?: 0} / ${gpu.mem_total_mib ?: 0} MiB"
+                    :pct {gpu.mem_pct ?: 0}
+                    :status {gpu.status ?: "ok"})
+      ;; Clocks
+      (box :orientation "h" :space-evenly true :spacing 4
+        (stat-line :icon "" :label "Core" :value "${gpu.clock_gfx_mhz ?: 0}")
+        (stat-line :icon "" :label "Mem"  :value "${gpu.clock_mem_mhz ?: 0}"))
+      ;; History graph
+      (graph :class "sp-graph" :value {gpu.util_pct ?: 0}
+             :time-range "60s" :max 100 :min 0 :dynamic false
+             :thickness 2 :line-style "round" :height 30))))
+
+;; ── RAM Panel ───────────────────────────────
+(defwidget ram-panel []
+  (sensor-card :title "MEMORY" :icon "󰍛" :class "ram"
+    (box :orientation "v" :space-evenly false :spacing 4 :vexpand true
+      ;; Gauge + key stats
+      (box :orientation "h" :space-evenly false :spacing 8
+        (gauge :value {ram.used_pct ?: 0} :thickness 8
+               :label "%" :status {ram.status ?: "ok"})
+        (box :orientation "v" :space-evenly false :spacing 3 :valign "center" :hexpand true
+          (stat-line :icon "󰧮" :label "Used"  :value "${ram.used_gb ?: 0} GiB")
+          (stat-line :icon "󰋼" :label "Free"  :value "${ram.available_gb ?: 0} GiB")
+          (stat-line :icon "" :label "Total" :value "${ram.total_gb ?: 0} GiB")))
+      ;; RAM bar
+      (sensor-meter :label "RAM" :value "${ram.used_pct ?: 0}%"
+                    :pct {ram.used_pct ?: 0} :status {ram.status ?: "ok"})
+      ;; Swap bar
+      (sensor-meter :label "SWAP" :value "${ram.swap_used_gb ?: 0} / ${ram.swap_total_gb ?: 0} GiB"
+                    :pct {ram.swap_pct ?: 0} :status "ok")
+      ;; History graph
+      (graph :class "sp-graph" :value {ram.used_pct ?: 0}
+             :time-range "60s" :max 100 :min 0 :dynamic false
+             :thickness 2 :line-style "round" :height 30))))
+
+;; ── Info Panel (Storage + Network + System) ─
+(defwidget info-panel []
+  (sensor-card :title "INFO" :icon "󰋊" :class "info"
+    (box :orientation "v" :space-evenly false :spacing 4 :vexpand true
+      ;; Drive bars
+      (for d in {storage.drives ?: "[]"}
+        (sensor-meter :label "󰉋 ${d.mount}"
+                      :value "${d.used_pct}%"
+                      :pct {d.used_pct}
+                      :status {d.used_pct >= 90 ? "critical" : d.used_pct >= 75 ? "warm" : "ok"}))
+      ;; Clock
+      (box :class "sp-clock-wrap" :orientation "v" :space-evenly false :spacing 0 :halign "center"
+        (label :class "sp-clock" :text {formattime(EWW_TIME, "%I:%M")})
+        (label :class "sp-clock-ampm" :text {formattime(EWW_TIME, "%p")}))
+      ;; System info
+      (stat-line :icon "󰥔" :label "Up" :value {sysinfo.uptime ?: "—"})
+      (stat-line :icon "" :label "Load" :value "${sysinfo.load1 ?: '—'} ${sysinfo.load5 ?: ''}")
+      (stat-line :icon "" :label ""     :value {sysinfo.kernel ?: "—"}))))
+
+;; ── Sensor panel window ─────────────────────
+;; 4 panels in a single row, filling the full monitor
+;; Monitor index 0 = HDMI-A-2 (verify: hyprctl monitors)
+(defwindow sensor-panel
+  :monitor 1
+  :geometry (geometry :x "0" :y "0" :width "100%" :height "100%" :anchor "center")
+  :stacking "overlay"
+  :focusable false
+  :exclusive false
+  :namespace "hypr-os-sensor"
+  (box :class "sensor-panel" :orientation "h" :space-evenly true :spacing 4
+    (cpu-panel)
+    (gpu-panel)
+    (ram-panel)
+    (info-panel)))
+
+
+;; ╔══════════════════════════════════════════╗
+;; ║      PRIMARY MONITOR WIDGETS            ║
+;; ║  metrics-bar + dropdown overlays        ║
+;; ╚══════════════════════════════════════════╝
 
 ;; ── Helper: status → color class ─────────────
 (defwidget chip [status]
@@ -82,10 +262,9 @@
     (box :orientation "h" :space-evenly false
       (label :class "meter-label" :text label :xalign 0 :hexpand true)
       (label :class "meter-value" :text value :xalign 1))
-    (overlay
-      (box :class "meter-track")
-      (box :class "meter-fill meter-${status}" :hexpand false
-           :style "min-width: ${pct >= 100 ? 100 : pct < 1 ? 1 : pct}%;"))))
+    (scale :class "meter-bar meter-bar-${status}"
+           :min 0 :max 101 :value {pct ?: 0}
+           :orientation "h" :draw-value false)))
 
 (defwidget core-bar [pct]
   (box :class "core-bar core-bar-${pct >= 80 ? 'hot' : pct >= 50 ? 'mid' : 'cool'}"

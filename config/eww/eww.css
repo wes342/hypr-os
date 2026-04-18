@@ -1,11 +1,225 @@
 @import url("colors.css");
 
 * {
-    font-family: "Iosevka Nerd Font", "Inter", sans-serif;
-    font-size: 13px;
+    font-family: "Iosevka Nerd Font", "Inter", monospace;
+    font-size: 32px;
+    color: @fg;
 }
 
-/* ── Always-visible bar ─────────────────────── */
+/* ╔══════════════════════════════════════════╗
+   ║     SENSOR PANEL — 1920×480 @ 250 DPI   ║
+   ║     Arm's-length readable               ║
+   ╚══════════════════════════════════════════╝ */
+
+.sensor-panel {
+    background-color: alpha(@bg, 0.68);
+    padding: 6px 10px;
+}
+
+/* ── Card ──────────────────────────────────── */
+.sensor-card {
+    background-color: alpha(@bg_dim, 0.62);
+    border: 2px solid @accent;
+    border-radius: 8px;
+    padding: 6px 8px;
+}
+
+.sensor-card-header {
+    padding-bottom: 4px;
+    border-bottom: 1px solid alpha(@accent_dim, 0.25);
+    margin-bottom: 6px;
+}
+
+.sensor-card-icon {
+    font-size: 30px;
+    color: @accent;
+}
+
+.sensor-card-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: @fg_dim;
+    letter-spacing: 0.12em;
+}
+
+.sensor-card-body {
+    padding: 0;
+}
+
+/* ── Circular gauge ────────────────────────── */
+.gauge-wrap {
+    min-width: 150px;
+    padding: 0 2px;
+}
+
+.gauge {
+    min-width: 150px;
+    min-height: 150px;
+    background-color: alpha(@bg_highlight, 0.35);
+    color: alpha(@accent, 0.25);
+    padding: 18px;
+}
+
+.gauge-ok        { color: alpha(@ok, 0.5); }
+.gauge-warm      { color: alpha(@warm, 0.6); }
+.gauge-critical  { color: alpha(@critical, 0.7); }
+
+.gauge-inner {
+    min-width: 110px;
+    min-height: 110px;
+}
+
+.gauge-value {
+    font-size: 52px;
+    font-weight: 800;
+    color: @fg;
+    margin-top: 16px;
+}
+
+.gauge-label {
+    font-size: 18px;
+    font-weight: 700;
+    color: @fg_dim;
+    letter-spacing: 0.15em;
+}
+
+/* ── Model name ────────────────────────────── */
+.sp-model-name {
+    font-size: 12px;
+    color: @fg_dim;
+    letter-spacing: 0.04em;
+}
+
+/* ── Stat lines ────────────────────────────── */
+.stat-line {
+    padding: 2px 0;
+}
+
+.stat-line-icon {
+    font-size: 30px;
+    color: @accent;
+    min-width: 36px;
+}
+
+.stat-line-label {
+    font-size: 30px;
+    color: @fg_dim;
+}
+
+.stat-line-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: @fg;
+}
+
+/* ── Meter bars (scale widget) ─────────────── */
+.sensor-meter {
+    padding: 1px 0;
+}
+
+.sensor-meter-label {
+    font-size: 24px;
+    color: @fg_dim;
+}
+
+.sensor-meter-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: @fg;
+}
+
+.sensor-meter-bar trough {
+    background-color: alpha(@bg_highlight, 0.5);
+    border-radius: 4px;
+    min-height: 12px;
+}
+
+.sensor-meter-bar highlight {
+    border-radius: 4px;
+    min-height: 12px;
+}
+
+.sensor-meter-bar slider { all: unset; }
+
+.sensor-meter-ok highlight       { background-color: @accent; }
+.sensor-meter-warm highlight     { background-color: @warm; }
+.sensor-meter-critical highlight { background-color: @critical; }
+
+/* ── Per-core bars ─────────────────────────── */
+.sp-core-grid {
+    background-color: alpha(@bg_highlight, 0.3);
+    border-radius: 4px;
+    padding: 3px 2px;
+}
+
+.sp-core {
+    min-width: 5px;
+}
+
+.sp-core-fill {
+    border-radius: 2px;
+    min-width: 4px;
+}
+
+.sp-core-cool .sp-core-fill { background-color: @accent_dim; }
+.sp-core-mid  .sp-core-fill { background-color: @accent; }
+.sp-core-hot  .sp-core-fill { background-color: @critical; }
+
+/* ── Graphs ────────────────────────────────── */
+.sp-graph {
+    background-color: alpha(@bg_highlight, 0.3);
+    border-radius: 4px;
+    padding: 2px;
+    color: @accent;
+}
+
+/* ── Network speeds ────────────────────────── */
+.net-speeds {
+    background-color: alpha(@bg_highlight, 0.3);
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+
+.net-dir {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: @fg_dim;
+}
+
+.net-dl { color: @ok; }
+.net-ul { color: @warm; }
+
+.net-speed {
+    font-size: 38px;
+    font-weight: 800;
+    color: @fg;
+}
+
+/* ── Clock ─────────────────────────────────── */
+.sp-clock-wrap {
+    padding: 4px 0;
+}
+
+.sp-clock {
+    font-size: 50px;
+    font-weight: 800;
+    color: @fg;
+    letter-spacing: 0.04em;
+}
+
+.sp-clock-ampm {
+    font-size: 22px;
+    font-weight: 700;
+    color: @fg_dim;
+    letter-spacing: 0.1em;
+}
+
+
+/* ╔══════════════════════════════════════════╗
+   ║    PRIMARY MONITOR WIDGET STYLES        ║
+   ╚══════════════════════════════════════════╝ */
+
 .metrics-bar {
     background-color: alpha(@bg, 0.85);
     color: @fg;
@@ -13,6 +227,7 @@
     border-radius: 10px;
     padding: 0 6px;
     min-height: 30px;
+    font-size: 13px;
 }
 
 .bar-icon {
@@ -34,6 +249,7 @@
 .bar-icon-value {
     color: @fg;
     font-weight: 500;
+    font-size: 13px;
 }
 
 .bar-icon-warm     .bar-icon-glyph,
@@ -45,13 +261,13 @@
 .bar-icon-unavailable .bar-icon-glyph,
 .bar-icon-unavailable .bar-icon-value  { color: @fg_dim; }
 
-/* ── Dropdown shell ─────────────────────────── */
 .dropdown {
     background-color: alpha(@bg, 0.96);
     color: @fg;
     border: 1px solid alpha(@accent_dim, 0.55);
     border-radius: 14px;
     padding: 16px 18px;
+    font-size: 13px;
 }
 
 .dropdown-header {
@@ -76,7 +292,6 @@
     letter-spacing: 0.08em;
 }
 
-/* ── Status chips ───────────────────────────── */
 .chip {
     font-size: 10px;
     font-weight: 700;
@@ -90,7 +305,6 @@
 .chip-loading,
 .chip-unavailable { color: @fg_dim; background-color: alpha(@bg_highlight, 0.7); }
 
-/* ── Section titles ─────────────────────────── */
 .section-title {
     color: @fg_dim;
     font-size: 9px;
@@ -100,7 +314,6 @@
     margin-bottom: 2px;
 }
 
-/* ── Stat tiles (4-column grid) ─────────────── */
 .stat-grid {
     background-color: alpha(@bg_highlight, 0.5);
     border-radius: 10px;
@@ -129,7 +342,6 @@
     margin-top: 1px;
 }
 
-/* ── Meters (horizontal usage bars, overlay) ── */
 .meter-label {
     color: @fg;
     font-size: 12px;
@@ -141,23 +353,23 @@
     font-size: 11px;
 }
 
-.meter-track {
+.meter-bar trough {
     background-color: alpha(@bg_highlight, 0.7);
     border-radius: 6px;
     min-height: 8px;
-    min-width: 380px;
 }
 
-.meter-fill {
+.meter-bar highlight {
     background-color: @accent;
     border-radius: 6px;
     min-height: 8px;
 }
 
-.meter-warm     { background-color: @warm; }
-.meter-critical { background-color: @critical; }
+.meter-bar slider { all: unset; }
 
-/* ── Per-core grid ──────────────────────────── */
+.meter-bar-warm highlight     { background-color: @warm; }
+.meter-bar-critical highlight { background-color: @critical; }
+
 .core-grid {
     background-color: alpha(@bg_highlight, 0.5);
     border-radius: 10px;
@@ -178,7 +390,6 @@
 .core-bar-mid  .core-bar-fill { background-color: @accent; }
 .core-bar-hot  .core-bar-fill { background-color: @critical; }
 
-/* ── Live graph ─────────────────────────────── */
 .graph {
     background-color: alpha(@bg_highlight, 0.5);
     border-radius: 10px;
