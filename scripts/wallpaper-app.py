@@ -265,18 +265,18 @@ def add_ignore(wid):
 
 class WallpaperTile(Gtk.FlowBoxChild):
     def __init__(self, thumb_path, label, full_path=None, wh_item=None,
-                 on_save=None, on_ignore=None):
+                 on_save=None, on_ignore=None, on_delete=None):
         super().__init__()
         self.full_path = full_path
         self.wh_item = wh_item
         self._on_save = on_save
         self._on_ignore = on_ignore
+        self._on_delete = on_delete
 
         # Right-click gesture for context menu
-        if wh_item:
-            rc = Gtk.GestureClick(button=3)
-            rc.connect("pressed", self._on_right_click)
-            self.add_controller(rc)
+        rc = Gtk.GestureClick(button=3)
+        rc.connect("pressed", self._on_right_click)
+        self.add_controller(rc)
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         box.set_margin_top(4)
@@ -309,24 +309,30 @@ class WallpaperTile(Gtk.FlowBoxChild):
         self.set_child(box)
 
     def _on_right_click(self, gesture, _n, x, y):
-        if not self.wh_item:
-            return
         menu = Gio.Menu()
-        menu.append("Save to library", "tile.save")
-        menu.append("Ignore this wallpaper", "tile.ignore")
-
         action_group = Gio.SimpleActionGroup()
 
-        save_action = Gio.SimpleAction.new("save", None)
-        save_action.connect("activate", lambda *_: self._on_save(self.wh_item) if self._on_save else None)
-        action_group.add_action(save_action)
+        if self.wh_item:
+            menu.append("Save to library", "tile.save")
+            save_action = Gio.SimpleAction.new("save", None)
+            save_action.connect("activate", lambda *_: self._on_save(self.wh_item) if self._on_save else None)
+            action_group.add_action(save_action)
 
-        ignore_action = Gio.SimpleAction.new("ignore", None)
-        ignore_action.connect("activate", lambda *_: self._on_ignore(self.wh_item) if self._on_ignore else None)
-        action_group.add_action(ignore_action)
+            menu.append("Ignore this wallpaper", "tile.ignore")
+            ignore_action = Gio.SimpleAction.new("ignore", None)
+            ignore_action.connect("activate", lambda *_: self._on_ignore(self.wh_item) if self._on_ignore else None)
+            action_group.add_action(ignore_action)
+
+        if self.full_path:
+            menu.append("Delete wallpaper", "tile.delete")
+            delete_action = Gio.SimpleAction.new("delete", None)
+            delete_action.connect("activate", lambda *_: self._on_delete(self) if self._on_delete else None)
+            action_group.add_action(delete_action)
+
+        if menu.get_n_items() == 0:
+            return
 
         self.insert_action_group("tile", action_group)
-
         popover = Gtk.PopoverMenu.new_from_model(menu)
         popover.set_parent(self)
         popover.set_pointing_to(Gdk.Rectangle(int(x), int(y), 1, 1))
@@ -371,13 +377,20 @@ class WallpaperApp(Adw.Application):
         switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
         header.set_title_widget(switcher)
 
-        # ── Local tab ──
+        # ── Tabs ──
         local_page = self._build_local_tab()
-        self.stack.add_titled(local_page, "local", "Local")
+        self.stack.add_titled(local_page, "local", "📁 Local")
 
-        # ── Wallhaven tab ──
         wh_page = self._build_wallhaven_tab()
-        self.stack.add_titled(wh_page, "wallhaven", "Wallhaven")
+        self.stack.add_titled(wh_page, "wallhaven", "🌐 Wallhaven")
+
+        both_page = self._build_both_tab()
+        self.stack.add_titled(both_page, "both", "📁+🌐 Both")
+
+        # Auto-select tab based on source config
+        source = self.conf.get("source", "local")
+        if source in ("local", "wallhaven", "both"):
+            self.stack.set_visible_child_name(source)
 
         # ── Assemble ──
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -386,10 +399,8 @@ class WallpaperApp(Adw.Application):
         win.set_content(main_box)
         win.present()
 
-        # Load local tiles in background
+        # Load tiles in background
         threading.Thread(target=self._load_local_tiles, daemon=True).start()
-
-        # Auto-load Wallhaven results if there's a saved query or sorting
         threading.Thread(target=self._load_wh_results,
                          args=(self.conf.get("query", ""),), daemon=True).start()
 
@@ -531,9 +542,11 @@ class WallpaperApp(Adw.Application):
 
         GLib.idle_add(self.local_status.set_label, f"{len(walls)} wallpapers")
 
-    def _add_local_tile(self, thumb, label, full_path):
-        tile = WallpaperTile(thumb, label, full_path=full_path)
-        self.local_flow.append(tile)
+    def _add_local_tile(self, thumb, label, full_path, flow=None):
+        target = flow or self.local_flow
+        tile = WallpaperTile(thumb, label, full_path=full_path,
+                             on_delete=self._delete_local)
+        target.append(tile)
         return False
 
     def _on_local_search(self, entry):
@@ -560,6 +573,123 @@ class WallpaperApp(Adw.Application):
                 daemon=True,
             ).start()
             self.local_status.set_label(f"Applied: {child.full_path.name}")
+
+    def _delete_local(self, tile):
+        """Show confirmation dialog then delete the wallpaper file."""
+        if not tile.full_path:
+            return
+        dialog = Adw.AlertDialog()
+        dialog.set_heading("Delete wallpaper?")
+        dialog.set_body(f"Permanently delete:\n{tile.full_path.name}")
+        dialog.add_response("cancel", "Cancel")
+        dialog.add_response("delete", "Delete")
+        dialog.set_response_appearance("delete", Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_default_response("cancel")
+        dialog.set_close_response("cancel")
+
+        def on_response(dlg, response):
+            if response == "delete" and tile.full_path and tile.full_path.exists():
+                tile.full_path.unlink()
+                # Remove tile from all flows that contain it
+                for flow in [self.local_flow, self.both_flow]:
+                    child = flow.get_first_child()
+                    while child:
+                        nxt = child.get_next_sibling()
+                        if hasattr(child, 'full_path') and child.full_path == tile.full_path:
+                            flow.remove(child)
+                        child = nxt
+                self.local_status.set_label(f"Deleted: {tile.full_path.name}")
+
+        dialog.connect("response", on_response)
+        dialog.present(self.get_active_window())
+
+    # ── Both tab ──
+
+    def _build_both_tab(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        box.set_margin_start(10)
+        box.set_margin_end(10)
+        box.set_margin_top(8)
+
+        self.both_search = Gtk.SearchEntry(placeholder_text="Search all wallpapers...")
+        self.both_search.connect("search-changed", self._on_both_search)
+        box.append(self.both_search)
+
+        scroll = Gtk.ScrolledWindow(vexpand=True)
+        self.both_flow = Gtk.FlowBox()
+        self.both_flow.set_valign(Gtk.Align.START)
+        self.both_flow.set_max_children_per_line(5)
+        self.both_flow.set_min_children_per_line(3)
+        self.both_flow.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        self.both_flow.set_homogeneous(True)
+        self.both_flow.connect("child-activated", self._on_both_activated)
+        scroll.set_child(self.both_flow)
+        box.append(scroll)
+
+        self.both_status = Gtk.Label(label="Loading...")
+        self.both_status.add_css_class("settings-label")
+        box.append(self.both_status)
+
+        return box
+
+    def _populate_both_tab(self):
+        """Called after local + wallhaven tiles are loaded."""
+        # Add local tiles to the both flow
+        walls = list_local_wallpapers()
+        for wall in walls:
+            thumb = make_thumb(wall)
+            rel = str(wall.relative_to(WALL_DIR))
+            label = rel.rsplit(".", 1)[0]
+            GLib.idle_add(self._add_local_tile, thumb, label, wall, self.both_flow)
+
+        # Add wallhaven tiles
+        if self.wh_items:
+            ignores = read_ignores()
+            for item in self.wh_items:
+                if item["id"] in ignores:
+                    continue
+                tp = wh_thumb_path(item)
+                label = f"🌐 {item['id']}  {item.get('resolution', '?')}"
+                GLib.idle_add(self._add_wh_both_tile, tp, label, item)
+
+        GLib.idle_add(self.both_status.set_label, f"{len(walls)} local + wallhaven results")
+
+    def _add_wh_both_tile(self, tp, label, item):
+        tile = WallpaperTile(tp, label, wh_item=item,
+                             on_save=self._save_wh_only,
+                             on_ignore=self._ignore_wh)
+        self.both_flow.append(tile)
+        return False
+
+    def _on_both_search(self, entry):
+        query = entry.get_text().lower()
+        child = self.both_flow.get_first_child()
+        while child:
+            box = child.get_child()
+            lbl = None
+            c = box.get_first_child()
+            while c:
+                if isinstance(c, Gtk.Label):
+                    lbl = c
+                    break
+                c = c.get_next_sibling()
+            if lbl:
+                child.set_visible(query in lbl.get_label().lower())
+            child = child.get_next_sibling()
+
+    def _on_both_activated(self, flow, child):
+        if child.wh_item:
+            self.both_status.set_label(f"Downloading {child.wh_item['id']}...")
+            threading.Thread(
+                target=self._download_and_apply_wh, args=(child.wh_item,), daemon=True
+            ).start()
+        elif child.full_path:
+            threading.Thread(
+                target=apply_wallpaper,
+                args=(child.full_path, self.retheme, self._refresh_theme_css),
+                daemon=True,
+            ).start()
+            self.both_status.set_label(f"Applied: {child.full_path.name}")
 
     # ── Wallhaven tab ──
 
@@ -638,6 +768,9 @@ class WallpaperApp(Adw.Application):
             wh_download_thumb(item)
 
         GLib.idle_add(self._populate_wh_grid, items)
+
+        # Refresh both tab with new wallhaven results
+        threading.Thread(target=self._populate_both_tab, daemon=True).start()
 
     def _populate_wh_grid(self, items):
         # Clear existing
