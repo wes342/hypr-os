@@ -25,6 +25,7 @@ rofi -dmenu \
 <tt>  Float                Super + V                   Toggle floating                 </tt>
 <tt>  Pseudo               Super + P                   Pseudo-tile mode                </tt>
 <tt>  Split                Super + J                   Toggle split direction          </tt>
+<tt>  Layout               Super + T                   Toggle tiled / scrolling        </tt>
 <tt><b>─── Focus / Move ──────────────────────────────────────────────────────────────</b></tt>
 <tt>  Focus                Super + Arrows              Move focus between windows      </tt>
 <tt>  Move                 Super + Shift + Arrows      Move window                     </tt>
