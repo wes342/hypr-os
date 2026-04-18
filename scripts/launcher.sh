@@ -34,7 +34,7 @@ FG_DIM="#$(read_color fg_dim)"
 # Build live theme overrides
 THEME_STR=""
 if [[ -n "$WALLPAPER" && -f "$WALLPAPER" ]]; then
-    THEME_STR+="window { background-image: url(\"$WALLPAPER\", width); }"
+    THEME_STR+="window { background-image: url(\"$WALLPAPER\", both); }"
 fi
 THEME_STR+=" window { border-color: ${ACCENT_DIM}; }"
 THEME_STR+=" * { text-color: ${FG}; }"

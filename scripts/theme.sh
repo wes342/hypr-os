@@ -312,6 +312,10 @@ hyprctl reload 2>/dev/null || true
 # Waybar
 pkill waybar 2>/dev/null; sleep 0.2; waybar &>/dev/null &
 
+# Close rofi so next open picks up the new wallpaper + colors
+pkill -x rofi 2>/dev/null || true
+rm -f /tmp/hypr-os-launcher.lock
+
 # SwayNC
 swaync-client -rs 2>/dev/null || true
 
