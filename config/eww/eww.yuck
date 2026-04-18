@@ -187,8 +187,8 @@
 
 ;; ── Sensor panel dimmer (brightness control) ─
 ;; Black overlay with adjustable opacity. Controlled via keybinds.
-;; dimmer-alpha is a string like "0.0", "0.1", ... "0.8"
-(defvar dimmer-alpha "0.0")
+;; dimmer-level is 0-8, maps to CSS class dimmer-0 through dimmer-8
+(defvar dimmer-level 0)
 
 (defwindow sensor-dimmer
   :monitor 1
@@ -197,8 +197,7 @@
   :focusable false
   :exclusive false
   :namespace "hypr-os-dimmer"
-  (box :class "sensor-dimmer"
-       :style "opacity: ${dimmer-alpha};"))
+  (box :class "sensor-dimmer dimmer-${dimmer-level}"))
 
 
 ;; ╔══════════════════════════════════════════╗

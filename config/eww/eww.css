@@ -217,10 +217,16 @@
 
 
 /* ── Sensor panel dimmer ───────────────────── */
-.sensor-dimmer {
-    background-color: black;
-    border-radius: 0;
-}
+.sensor-dimmer { border-radius: 0; }
+.dimmer-0 { background-color: alpha(black, 0.0); }
+.dimmer-1 { background-color: alpha(black, 0.1); }
+.dimmer-2 { background-color: alpha(black, 0.2); }
+.dimmer-3 { background-color: alpha(black, 0.3); }
+.dimmer-4 { background-color: alpha(black, 0.4); }
+.dimmer-5 { background-color: alpha(black, 0.5); }
+.dimmer-6 { background-color: alpha(black, 0.6); }
+.dimmer-7 { background-color: alpha(black, 0.7); }
+.dimmer-8 { background-color: alpha(black, 0.8); }
 
 /* ╔══════════════════════════════════════════╗
    ║    PRIMARY MONITOR WIDGET STYLES        ║
