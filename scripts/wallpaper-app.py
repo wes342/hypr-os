@@ -490,6 +490,25 @@ class WallpaperApp(Adw.Application):
         .settings-value {{
             color: {fg};
         }}
+        .sort-btn {{
+            min-width: 36px;
+            min-height: 36px;
+            padding: 4px 8px;
+            font-size: 18px;
+            border-radius: 8px;
+            background-color: {bg_hl};
+            color: {fg_dim};
+            border: 1px solid transparent;
+        }}
+        .sort-btn:hover {{
+            background-color: {accent_dim};
+            color: {fg};
+        }}
+        .sort-active {{
+            background-color: {accent_dim};
+            color: {accent};
+            border-color: {accent};
+        }}
         """
         provider = Gtk.CssProvider()
         provider.load_from_string(css)
@@ -702,8 +721,33 @@ class WallpaperApp(Adw.Application):
         box.set_margin_end(10)
         box.set_margin_top(8)
 
-        # Search bar
-        search_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        # Sorting buttons + search bar
+        search_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+
+        # Sorting quick-buttons
+        self._sort_buttons = {}
+        sort_items = [
+            ("latest",  "󰃭", "Latest uploads"),
+            ("toplist", "󰓎", "Top rated"),
+            ("hot",     "󰈸", "Trending"),
+            ("random",  "󰒝", "Random"),
+        ]
+        for sort_id, icon, tooltip in sort_items:
+            btn = Gtk.Button(label=icon)
+            btn.set_tooltip_text(tooltip)
+            btn.add_css_class("sort-btn")
+            btn.connect("clicked", self._on_sort_clicked, sort_id)
+            search_box.append(btn)
+            self._sort_buttons[sort_id] = btn
+
+        # Highlight the active sort button
+        self._update_sort_buttons()
+
+        sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        sep.set_margin_start(4)
+        sep.set_margin_end(4)
+        search_box.append(sep)
+
         self.wh_search = Gtk.SearchEntry(placeholder_text="Search Wallhaven...")
         self.wh_search.set_text(self.conf.get("query", ""))
         self.wh_search.set_hexpand(True)
@@ -751,6 +795,25 @@ class WallpaperApp(Adw.Application):
         box.append(self.wh_status)
 
         return box
+
+    def _on_sort_clicked(self, _btn, sort_id):
+        """Quick-sort button: switch sorting and reload."""
+        self.conf["sorting"] = sort_id
+        write_conf(self.conf)
+        self._update_sort_buttons()
+        self.wh_page = 1
+        query = self.wh_search.get_text()
+        self.wh_status.set_label(f"Loading {sort_id}...")
+        threading.Thread(target=self._load_wh_results, args=(query,), daemon=True).start()
+
+    def _update_sort_buttons(self):
+        """Highlight the active sort button."""
+        current = self.conf.get("sorting", "random")
+        for sid, btn in self._sort_buttons.items():
+            if sid == current:
+                btn.add_css_class("sort-active")
+            else:
+                btn.remove_css_class("sort-active")
 
     def _on_wh_search(self, *_args):
         query = self.wh_search.get_text()
