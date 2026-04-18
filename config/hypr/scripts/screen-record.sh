@@ -8,15 +8,19 @@ if pgrep -x wf-recorder >/dev/null; then
     exit 0
 fi
 
+# Record the focused monitor
+MONITOR=$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused) | .name')
+[[ -z "$MONITOR" ]] && MONITOR="DP-3"
+
 mkdir -p ~/Videos
 OUTFILE=~/Videos/recording-$(date +%Y%m%d-%H%M%S).mp4
 
 if [[ "${1:-}" == "region" ]]; then
     GEOM=$(slurp 2>/dev/null) || exit 1
-    wf-recorder -g "$GEOM" -f "$OUTFILE" &
+    wf-recorder -o "$MONITOR" -g "$GEOM" -f "$OUTFILE" &
     notify-send -t 2000 "Recording" "Region recording started"
 else
-    wf-recorder -f "$OUTFILE" &
+    wf-recorder -o "$MONITOR" -f "$OUTFILE" &
     notify-send -t 2000 "Recording" "Started"
 fi
 

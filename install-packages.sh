@@ -71,8 +71,8 @@ PACMAN_PKGS=(
     # Eye candy / terminal effects
     cmatrix
 
-    # Media / audio
-    ncmpcpp mpd cava playerctl
+    # Media / audio / video
+    ncmpcpp mpd cava playerctl mpv yt-dlp
 
     # Fonts + icons
     ttf-iosevka-nerd ttf-jetbrains-mono-nerd ttf-font-awesome

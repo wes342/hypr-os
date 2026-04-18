@@ -144,6 +144,19 @@ Full-featured calculator with unit conversions, currency, and equation solving. 
 
 Bluetooth manager with system tray applet. Auto-started at login for quick device pairing.
 
+## mpv
+
+GPU-accelerated video player. Plays local files, streams, and YouTube (via yt-dlp).
+
+- `Space` play/pause, `f` fullscreen, `q` quit
+- `Left/Right` seek 5s, `Up/Down` seek 60s
+- `9/0` volume down/up, `m` mute
+- `s` screenshot
+
+YouTube: `mpv "https://youtube.com/watch?v=..."` (quote the URL to prevent `&` issues)
+
+Config: `config/mpv/mpv.conf` — Vulkan + gpu-next, hardware decoding, 1440p YouTube cap.
+
 ## Gaming Apps
 
 **Steam:** Launch with `gamescope` for better Wayland compatibility. MangoHud can be enabled per-game via launch options: `mangohud %command%`.
