@@ -1,19 +1,23 @@
 #!/usr/bin/env bash
-# Toggle rofi launcher -- if running, kill it; otherwise launch it
+# Toggle rofi launcher -- if running, kill it; otherwise launch it.
+# Injects the current wallpaper as the window background-image.
 
-HYPR_OS_DIR="${HYPR_OS_DIR:-$HOME/dev/hypr-os}"
 LOCKFILE="/tmp/hypr-os-launcher.lock"
-DEFAULTS="$HOME/.config/hypr/defaults.conf"
+WALLPAPER=$(cat "$HOME/.cache/hypr/current_wallpaper" 2>/dev/null || echo "")
 
 if [[ -f "$LOCKFILE" ]]; then
-    # Launcher was recently opened, close it
     pkill -x rofi 2>/dev/null
     rm -f "$LOCKFILE"
 else
-    # Open launcher
     touch "$LOCKFILE"
-    MENU=$(grep '^\$menu' "$DEFAULTS" | sed 's/^\$menu = //')
-    ${MENU:-rofi -show drun -show-icons}
-    # Clean up lock when rofi exits (user picked something or pressed Esc)
+
+    THEME_EXTRA=""
+    if [[ -n "$WALLPAPER" && -f "$WALLPAPER" ]]; then
+        THEME_EXTRA="window { background-image: url(\"$WALLPAPER\", width); }"
+    fi
+
+    rofi -show drun -show-icons \
+        -theme-str "$THEME_EXTRA"
+
     rm -f "$LOCKFILE"
 fi
