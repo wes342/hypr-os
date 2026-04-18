@@ -19,23 +19,30 @@ configuration {
     text-color:             @fg;
 }
 
+/* ── Window: wallpaper fills the entire frame ── */
 window {
     transparency:           "real";
-    background-color:       rgba(10, 10, 15, 0.78);
+    /* background-image injected via -theme-str by launcher.sh */
+    background-color:       @bg;
     border-radius:          16px;
-    width:                  420px;
+    width:                  55%;
+    height:                 55%;
     padding:                0;
-    border:                 1px solid;
-    border-color:           @accent-dim;
+    border:                 0;
     location:               center;
 }
 
+/* ── Main box: pushed to the right half ── */
 mainbox {
     children:               [ inputbar, listview ];
-    spacing:                12px;
-    padding:                20px;
+    background-color:       rgba(10, 10, 18, 0.88);
+    margin:                 0 0 0 45%;
+    padding:                24px 20px;
+    spacing:                14px;
+    border-radius:          0 16px 16px 0;
 }
 
+/* ── Search bar ── */
 inputbar {
     children:               [ prompt, entry ];
     background-color:       rgba(255, 255, 255, 0.06);
@@ -49,12 +56,12 @@ prompt {
     background-color:       inherit;
     enabled:                true;
     padding:                8px 12px;
-    font:                   "Iosevka Nerd Font Bold 14";
+    font:                   "Iosevka Nerd Font Bold 15";
     text-color:             @accent;
 }
 
 entry {
-    placeholder:            "Search apps...";
+    placeholder:            "Search...";
     background-color:       inherit;
     placeholder-color:      @fg-dim;
     expand:                 true;
@@ -62,9 +69,10 @@ entry {
     font:                   "Iosevka Nerd Font 13";
 }
 
+/* ── App list ── */
 listview {
     columns:                1;
-    lines:                  8;
+    lines:                  9;
     cycle:                  false;
     dynamic:                true;
     layout:                 vertical;
@@ -76,7 +84,7 @@ listview {
 element {
     orientation:            horizontal;
     padding:                10px 14px;
-    spacing:                14px;
+    spacing:                16px;
     border-radius:          10px;
     cursor:                 pointer;
 }
@@ -88,15 +96,13 @@ element alternate.normal {
 }
 
 element selected.normal {
-    background-color:       rgba(255, 255, 255, 0.1);
+    background-color:       rgba(255, 255, 255, 0.12);
     text-color:             @fg;
-    border:                 1px solid;
-    border-color:           @accent;
     border-radius:          10px;
 }
 
 element-icon {
-    size:                   36px;
+    size:                   42px;
     vertical-align:         0.5;
     horizontal-align:       0.5;
     background-color:       inherit;
@@ -109,5 +115,5 @@ element-text {
     vertical-align:         0.5;
     background-color:       inherit;
     text-color:             inherit;
-    font:                   "Iosevka Nerd Font 13";
+    font:                   "Iosevka Nerd Font 14";
 }
