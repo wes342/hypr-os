@@ -55,14 +55,15 @@ PACMAN_PKGS=(
     # System / process monitors
     btop htop lm_sensors nvtop
 
-    # File manager + thumbnailers + archives + image viewer
+    # File manager + thumbnailers + archives + image viewer + PDF
     thunar thunar-archive-plugin tumbler ffmpegthumbnailer ark ranger imv
+    zathura zathura-pdf-mupdf
 
     # Tooling the scripts rely on
     imagemagick jq python curl bc
 
-    # Clipboard and screenshotting
-    wl-clipboard cliphist grim slurp satty
+    # Clipboard, screenshotting, screen recording, color picker
+    wl-clipboard cliphist grim slurp satty wf-recorder hyprpicker
 
     # Shell niceties (install.sh wires these into bashrc)
     starship zoxide fastfetch fzf bat chafa
@@ -91,8 +92,11 @@ PACMAN_PKGS=(
     # GTK / polkit / tray
     polkit-gnome network-manager-applet
 
+    # Bluetooth + USB auto-mount
+    blueman gvfs udisks2
+
     # Browsers + everyday apps
-    firefox discord code
+    firefox discord code qalculate-gtk
 
     # Gaming (needs multilib)
     steam gamescope mangohud lib32-mangohud goverlay wine winetricks
@@ -152,5 +156,9 @@ else
         echo "    $p"
     done
 fi
+
+# ── Enable system services ─────────────────────────────
+info "Enabling udisks2 (USB auto-mount)..."
+sudo systemctl enable --now udisks2 2>/dev/null || warn "Could not enable udisks2 — run: sudo systemctl enable --now udisks2"
 
 info "Done. Run ./install.sh next to link configs."

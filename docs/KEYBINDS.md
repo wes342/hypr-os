@@ -18,6 +18,9 @@ All keyboard shortcuts. `SUPER` is the Windows/Meta key.
 | `SUPER + SHIFT + R` | Reload Hyprland config |
 | `SUPER + CTRL + R` | Restart Waybar |
 | `SUPER + K` | Keybind cheatsheet |
+| `SUPER + C` | Color picker (hex to clipboard) |
+| `SUPER + ALT + R` | Toggle screen recording |
+| `SUPER + ALT + SHIFT + R` | Toggle region recording |
 
 ## Window Management
 

@@ -41,8 +41,14 @@ else
         mapfile -t WALLS < <(find "$WALLPAPER_DIR" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null)
 
         if [[ ${#WALLS[@]} -eq 0 && -z "$WALLPAPER" ]]; then
-            notify-send -t 3000 "Wallpaper" "No wallpapers found" 2>/dev/null || true
-            exit 1
+            # Fall back to bundled default wallpaper (fresh install)
+            local default_wp="$CONFIG_DIR/wallpapers/default.jpg"
+            if [[ -f "$default_wp" ]]; then
+                WALLPAPER="$(realpath "$default_wp")"
+            else
+                notify-send -t 3000 "Wallpaper" "No wallpapers found" 2>/dev/null || true
+                exit 1
+            fi
         fi
 
         if [[ ${#WALLS[@]} -gt 0 ]]; then

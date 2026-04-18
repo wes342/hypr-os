@@ -36,6 +36,10 @@ rofi -dmenu \
 <tt>  Scratchpad           Super + S                   Toggle scratchpad               </tt>
 <tt>  To Scratch           Super + Shift + S           Send window to scratchpad       </tt>
 <tt>  Scroll WS            Super + Scroll              Cycle workspaces                </tt>
+<tt><b>─── Tools ─────────────────────────────────────────────────────────────────────</b></tt>
+<tt>  Color Picker         Super + C                   Pick color → clipboard          </tt>
+<tt>  Record Screen        Super + Alt + R             Toggle full screen recording     </tt>
+<tt>  Record Region        Super + Alt + Shift + R     Toggle region recording          </tt>
 <tt><b>─── Screenshots ───────────────────────────────────────────────────────────────</b></tt>
 <tt>  Region               Print                       Save + copy + annotate          </tt>
 <tt>  Full Screen          Super + Print               All monitors, save + edit       </tt>

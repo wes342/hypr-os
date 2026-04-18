@@ -113,6 +113,37 @@ Wayland-native image viewer. Lightweight and keyboard-driven.
 
 Set as default: `xdg-mime default imv-dir.desktop image/png image/jpeg image/webp`
 
+## Zathura
+
+Keyboard-driven PDF/document viewer. Minimal, fast, Vim-like keybinds.
+
+- `j/k` scroll, `J/K` page up/down
+- `+/-` zoom, `a` fit width, `s` fit page
+- `/` search, `Tab` table of contents
+
+Set as default: `xdg-mime default org.pwmt.zathura.desktop application/pdf`
+
+## Hyprpicker
+
+Wayland-native color picker. `Super + C` picks a color and copies the hex value to clipboard.
+
+## wf-recorder
+
+Wayland screen recorder. Saves MP4 to `~/Videos/`.
+
+- `Super + Alt + R` — toggle full-screen recording
+- `Super + Alt + Shift + R` — toggle region recording (select with mouse)
+
+Press the same keybind again to stop recording.
+
+## Qalculate
+
+Full-featured calculator with unit conversions, currency, and equation solving. Follows GTK dark theme.
+
+## Blueman
+
+Bluetooth manager with system tray applet. Auto-started at login for quick device pairing.
+
 ## Gaming Apps
 
 **Steam:** Launch with `gamescope` for better Wayland compatibility. MangoHud can be enabled per-game via launch options: `mangohud %command%`.
