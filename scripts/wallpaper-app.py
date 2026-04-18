@@ -797,14 +797,16 @@ class WallpaperApp(Adw.Application):
         return box
 
     def _on_sort_clicked(self, _btn, sort_id):
-        """Quick-sort button: switch sorting and reload."""
+        """Quick-sort button: browse ALL wallpapers with this sorting."""
         self.conf["sorting"] = sort_id
         write_conf(self.conf)
         self._update_sort_buttons()
         self.wh_page = 1
-        query = self.wh_search.get_text()
+        # Clear the search query so we get ALL wallpapers for this sort,
+        # not a filtered subset. Like clicking Hot/Latest/etc on wallhaven.cc.
+        self.wh_search.set_text("")
         self.wh_status.set_label(f"Loading {sort_id}...")
-        threading.Thread(target=self._load_wh_results, args=(query,), daemon=True).start()
+        threading.Thread(target=self._load_wh_results, args=("",), daemon=True).start()
 
     def _update_sort_buttons(self):
         """Highlight the active sort button."""
