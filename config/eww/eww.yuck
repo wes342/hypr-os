@@ -197,7 +197,7 @@
   :exclusive false
   :namespace "hypr-os-dimmer"
   (box :class "sensor-dimmer"
-       :style "background-color: rgba(0, 0, 0, ${dimmer-opacity / 100.0});"))
+       :style "opacity: ${dimmer-opacity / 100.0};"))
 
 
 ;; ╔══════════════════════════════════════════╗

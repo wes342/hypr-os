@@ -218,6 +218,7 @@
 
 /* ── Sensor panel dimmer ───────────────────── */
 .sensor-dimmer {
+    background-color: black;
     border-radius: 0;
 }
 
