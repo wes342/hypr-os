@@ -25,17 +25,18 @@ window {
     /* background-image injected via -theme-str by launcher.sh */
     background-color:       @bg;
     border-radius:          16px;
-    width:                  55%;
-    height:                 55%;
+    width:                  48%;
+    height:                 48%;
     padding:                0;
-    border:                 0;
+    border:                 2px solid;
+    border-color:           @accent-dim;
     location:               center;
 }
 
 /* ── Main box: pushed to the right half ── */
 mainbox {
     children:               [ inputbar, listview ];
-    background-color:       rgba(10, 10, 18, 0.88);
+    background-color:       rgba(10, 10, 18, 0.82);
     margin:                 0 0 0 30%;
     padding:                24px 20px;
     spacing:                14px;
