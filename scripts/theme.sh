@@ -331,12 +331,10 @@ pkill -USR1 kitty 2>/dev/null || true
 pkill -USR2 cava 2>/dev/null || true
 
 # Eww sensor panel — reload to pick up new colors.css
-# Preserve dimmer brightness across reload (eww reload resets variables)
 if pgrep -x eww >/dev/null 2>&1; then
-    _dimmer=$(eww get dimmer-level 2>/dev/null || echo 0)
     eww reload 2>/dev/null || true
-    sleep 1
-    eww update dimmer-level="$_dimmer" 2>/dev/null || true
+    # Restore dimmer brightness after reload (runs in background to survive script exit)
+    (sleep 1 && ~/.config/hypr/scripts/sensor-brightness.sh restore) &
 fi
 
 # Notify
