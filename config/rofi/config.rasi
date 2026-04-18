@@ -1,96 +1,113 @@
 configuration {
     modi:                   "drun";
-    font:                   "Iosevka Nerd Font 12";
+    font:                   "Iosevka Nerd Font 13";
     show-icons:             true;
     icon-theme:             "Papirus-Dark";
     display-drun:           "";
     drun-display-format:    "{name}";
     sidebar-mode:           false;
+    hover-select:           true;
+    me-select-entry:        "";
+    me-accept-entry:        "MousePrimary";
 }
 
 @theme "/dev/null"
 @import "colors.rasi"
 
 * {
-    background-color:       @bg;
+    background-color:       transparent;
     text-color:             @fg;
 }
 
 window {
-    border-radius:          10px;
-    width:                  30%;
-    padding:                24px;
-    border:                 2px solid;
-    border-color:           @accent-dim;
+    transparency:           "real";
+    background-color:       alpha(@bg, 0.78);
+    border-radius:          16px;
+    width:                  420px;
+    padding:                0;
+    border:                 1px solid;
+    border-color:           alpha(@accent-dim, 0.6);
+    location:               center;
 }
 
-prompt {
-    background-color:       @bg-highlight;
-    enabled:                true;
-    padding:                8px 16px;
-    font:                   "Iosevka Nerd Font 12";
-    border-radius:          6px;
-}
-
-entry {
-    placeholder:            "Search...";
-    background-color:       @bg-highlight;
-    placeholder-color:      @fg-dim;
-    expand:                 true;
-    padding:                8px;
+mainbox {
+    children:               [ inputbar, listview ];
+    spacing:                12px;
+    padding:                20px;
 }
 
 inputbar {
     children:               [ prompt, entry ];
-    background-color:       @bg-highlight;
+    background-color:       alpha(@bg-highlight, 0.7);
     expand:                 false;
-    border-radius:          8px;
-    margin:                 0%;
-    padding:                4px;
+    border-radius:          12px;
+    padding:                6px 8px;
+    spacing:                8px;
+}
+
+prompt {
+    background-color:       inherit;
+    enabled:                true;
+    padding:                8px 12px;
+    font:                   "Iosevka Nerd Font Bold 14";
+    text-color:             @accent;
+}
+
+entry {
+    placeholder:            "Search apps...";
+    background-color:       inherit;
+    placeholder-color:      @fg-dim;
+    expand:                 true;
+    padding:                8px 6px;
+    font:                   "Iosevka Nerd Font 13";
 }
 
 listview {
     columns:                1;
-    lines:                  10;
+    lines:                  8;
     cycle:                  false;
     dynamic:                true;
     layout:                 vertical;
     scrollbar:              false;
     spacing:                4px;
-}
-
-mainbox {
-    children:               [ inputbar, listview ];
-    spacing:                2%;
-    padding:                2% 1% 2% 1%;
+    fixed-height:           true;
 }
 
 element {
     orientation:            horizontal;
-    padding:                8px 12px;
-    spacing:                12px;
-    border-radius:          6px;
+    padding:                10px 14px;
+    spacing:                14px;
+    border-radius:          10px;
+    cursor:                 pointer;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color:       transparent;
+    text-color:             @fg;
+}
+
+element selected.normal {
+    background-color:       alpha(@accent, 0.25);
+    text-color:             @fg;
+    border:                 1px solid;
+    border-color:           alpha(@accent, 0.5);
+    border-radius:          10px;
 }
 
 element-icon {
-    size:                   24px;
+    size:                   36px;
     vertical-align:         0.5;
+    horizontal-align:       0.5;
+    background-color:       inherit;
+    cursor:                 pointer;
 }
 
 element-text {
     expand:                 true;
     horizontal-align:       0.0;
     vertical-align:         0.5;
-}
-
-element-text, element-icon {
     background-color:       inherit;
     text-color:             inherit;
-}
-
-element selected {
-    background-color:       @bg-highlight;
-    border-radius:          8px;
-    border:                 1px solid;
-    border-color:           @accent;
+    font:                   "Iosevka Nerd Font 13";
 }
