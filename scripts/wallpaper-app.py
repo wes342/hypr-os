@@ -30,7 +30,8 @@ HOME = Path.home()
 WALL_DIR = HOME / "Pictures" / "Wallpaper"
 CACHE_DIR = HOME / ".cache" / "hypr-os" / "thumbs"
 WH_CACHE = HOME / ".cache" / "hypr-os" / "wallhaven" / "thumbs"
-WH_DEST = WALL_DIR / "wallhaven"
+WH_FULL_CACHE = HOME / ".cache" / "hypr-os" / "wallhaven" / "full"  # applied but not saved
+WH_SAVED = WALL_DIR / "wallhaven"  # explicitly saved to library
 COLORS_CSS = HOME / ".config" / "waybar" / "colors.css"
 CONF_FILE = HOME / ".config" / "hypr-os" / "wallhaven.conf"
 STATE_FILE = HOME / ".cache" / "hypr-os" / "wallpaper-browser.state"
@@ -174,9 +175,11 @@ def wh_download_thumb(item):
         return None
 
 
-def wh_download_full(item):
-    WH_DEST.mkdir(parents=True, exist_ok=True)
-    # Resolve full URL
+def wh_download_full(item, dest_dir=None):
+    """Download full wallpaper. dest_dir defaults to cache (not library)."""
+    if dest_dir is None:
+        dest_dir = WH_FULL_CACHE
+    dest_dir.mkdir(parents=True, exist_ok=True)
     wid = item["id"]
     conf = read_conf()
     params = {}
@@ -195,7 +198,7 @@ def wh_download_full(item):
     if not full_url:
         return None
     fname = full_url.rsplit("/", 1)[-1]
-    dest = WH_DEST / fname
+    dest = dest_dir / fname
     if dest.exists():
         return dest
     try:
@@ -825,12 +828,12 @@ class WallpaperApp(Adw.Application):
             GLib.idle_add(self.wh_status.set_label, "Download failed")
 
     def _save_wh_only(self, item):
-        """Context menu: download to library without applying."""
-        self.wh_status.set_label(f"Saving {item['id']}...")
+        """Context menu: download to ~/Pictures/Wallpaper/wallhaven/ (library)."""
+        self.wh_status.set_label(f"Saving {item['id']} to library...")
         def do_save():
-            path = wh_download_full(item)
+            path = wh_download_full(item, dest_dir=WH_SAVED)
             if path:
-                GLib.idle_add(self.wh_status.set_label, f"Saved: {path.name}")
+                GLib.idle_add(self.wh_status.set_label, f"Saved to library: {path.name}")
             else:
                 GLib.idle_add(self.wh_status.set_label, "Save failed")
         threading.Thread(target=do_save, daemon=True).start()

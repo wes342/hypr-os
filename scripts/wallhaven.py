@@ -25,7 +25,7 @@ from pathlib import Path
 HOME = Path.home()
 CONF_FILE = HOME / ".config/hypr-os/wallhaven.conf"
 THUMB_DIR = HOME / ".cache/hypr-os/wallhaven/thumbs"
-DEST_DIR = HOME / "Pictures/Wallpaper/wallhaven"
+DEST_DIR = HOME / ".cache/hypr-os/wallhaven/full"
 
 DEFAULTS = {
     "api_key": "",
