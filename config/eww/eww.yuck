@@ -171,6 +171,9 @@
 ;; ── Sensor panel window ─────────────────────
 ;; 4 panels in a single row, filling the full monitor
 ;; Monitor index 0 = HDMI-A-2 (verify: hyprctl monitors)
+;; dimmer-level is 0-8, maps to CSS class dimmer-0 through dimmer-8
+(defvar dimmer-level 0)
+
 (defwindow sensor-panel
   :monitor 1
   :geometry (geometry :x "0" :y "0" :width "100%" :height "100%" :anchor "center")
@@ -178,26 +181,13 @@
   :focusable false
   :exclusive false
   :namespace "hypr-os-sensor"
-  (box :class "sensor-panel" :orientation "h" :space-evenly true :spacing 4
-    (cpu-panel)
-    (gpu-panel)
-    (ram-panel)
-    (info-panel)))
-
-
-;; ── Sensor panel dimmer (brightness control) ─
-;; Black overlay with adjustable opacity. Controlled via keybinds.
-;; dimmer-level is 0-8, maps to CSS class dimmer-0 through dimmer-8
-(defvar dimmer-level 0)
-
-(defwindow sensor-dimmer
-  :monitor 1
-  :geometry (geometry :x "0" :y "0" :width "100%" :height "100%" :anchor "center")
-  :stacking "overlay"
-  :focusable false
-  :exclusive false
-  :namespace "hypr-os-dimmer"
-  (box :class "sensor-dimmer dimmer-${dimmer-level}"))
+  (overlay
+    (box :class "sensor-panel" :orientation "h" :space-evenly true :spacing 4
+      (cpu-panel)
+      (gpu-panel)
+      (ram-panel)
+      (info-panel))
+    (box :class "sensor-dimmer dimmer-${dimmer-level}")))
 
 
 ;; ╔══════════════════════════════════════════╗

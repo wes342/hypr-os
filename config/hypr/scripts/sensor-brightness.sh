@@ -3,11 +3,10 @@
 # Usage: sensor-brightness.sh up|down|reset
 #
 # Level 0 = full brightness, 8 = very dim
+# The dimmer is an overlay inside the sensor-panel window.
 
 MAX=8
 MIN=0
-
-eww active-windows 2>/dev/null | grep -q sensor-dimmer || eww open sensor-dimmer 2>/dev/null
 
 CURRENT=$(eww get dimmer-level 2>/dev/null || echo 0)
 
@@ -22,7 +21,3 @@ esac
 (( NEW < MIN )) && NEW=$MIN
 
 eww update dimmer-level="$NEW"
-
-if (( NEW == 0 )); then
-    eww close sensor-dimmer 2>/dev/null
-fi
