@@ -72,7 +72,7 @@ PACMAN_PKGS=(
     cmatrix
 
     # Media / audio / video
-    ncmpcpp mpd cava playerctl mpv yt-dlp
+    ncmpcpp mpd cava playerctl mpv
 
     # Fonts + icons
     ttf-iosevka-nerd ttf-jetbrains-mono-nerd ttf-font-awesome

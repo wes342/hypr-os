@@ -21,6 +21,9 @@ All keyboard shortcuts. `SUPER` is the Windows/Meta key.
 | `SUPER + C` | Color picker (hex to clipboard) |
 | `SUPER + ALT + R` | Toggle screen recording |
 | `SUPER + ALT + SHIFT + R` | Toggle region recording |
+| `SUPER + [` | Dim sensor panel |
+| `SUPER + ]` | Brighten sensor panel |
+| `SUPER + SHIFT + ]` | Reset sensor panel brightness |
 
 ## Window Management
 

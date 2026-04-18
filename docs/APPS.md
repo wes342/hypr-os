@@ -153,9 +153,7 @@ GPU-accelerated video player. Plays local files, streams, and YouTube (via yt-dl
 - `9/0` volume down/up, `m` mute
 - `s` screenshot
 
-YouTube: `mpv "https://youtube.com/watch?v=..."` (quote the URL to prevent `&` issues)
-
-Config: `config/mpv/mpv.conf` — Vulkan + gpu-next, hardware decoding, 1440p YouTube cap.
+Config: `config/mpv/mpv.conf` — gpu-next, hardware decoding.
 
 ## Gaming Apps
 

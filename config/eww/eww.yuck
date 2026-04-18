@@ -185,6 +185,21 @@
     (info-panel)))
 
 
+;; ── Sensor panel dimmer (brightness control) ─
+;; Black overlay with adjustable opacity. Controlled via keybinds.
+(defvar dimmer-opacity 0)
+
+(defwindow sensor-dimmer
+  :monitor 1
+  :geometry (geometry :x "0" :y "0" :width "100%" :height "100%" :anchor "center")
+  :stacking "overlay"
+  :focusable false
+  :exclusive false
+  :namespace "hypr-os-dimmer"
+  (box :class "sensor-dimmer"
+       :style "background-color: rgba(0, 0, 0, ${dimmer-opacity / 100.0});"))
+
+
 ;; ╔══════════════════════════════════════════╗
 ;; ║      PRIMARY MONITOR WIDGETS            ║
 ;; ║  metrics-bar + dropdown overlays        ║
