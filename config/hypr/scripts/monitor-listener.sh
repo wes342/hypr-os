@@ -16,22 +16,33 @@ while true; do
     SENSOR_ID=$(hyprctl monitors -j 2>/dev/null | jq -r ".[] | select(.name==\"$SENSOR\") | .id")
     [[ -z "$SENSOR_ID" || "$SENSOR_ID" == "null" ]] && continue
 
-    # Move any workspaces stuck on sensor monitor to primary
-    for ws in $(hyprctl workspaces -j 2>/dev/null | jq -r ".[] | select(.monitor==\"$SENSOR\") | .id"); do
-        hyprctl dispatch moveworkspacetomonitor "$ws" "$PRIMARY" 2>/dev/null
-    done
+    # Remember which workspace is focused so we can restore it
+    CURRENT_WS=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id')
 
-    # Move any windows stuck on sensor monitor
+    MOVED=false
+
+    # Move any stray windows off sensor monitor silently to workspace 1
     for addr in $(hyprctl clients -j 2>/dev/null | jq -r ".[] | select(.monitor==$SENSOR_ID) | .address"); do
         hyprctl dispatch movetoworkspacesilent "1,address:$addr" 2>/dev/null
+        MOVED=true
     done
+
+    # Move any workspaces stuck on sensor monitor (except the empty placeholder)
+    for ws in $(hyprctl workspaces -j 2>/dev/null | jq -r ".[] | select(.monitor==\"$SENSOR\" and .windows > 0) | .id"); do
+        hyprctl dispatch moveworkspacetomonitor "$ws" "$PRIMARY" 2>/dev/null
+        MOVED=true
+    done
+
+    # Restore focus to the workspace we were on
+    if $MOVED && [[ -n "$CURRENT_WS" ]]; then
+        hyprctl dispatch workspace "$CURRENT_WS" 2>/dev/null
+    fi
 
     # Check if sensor panel eww is on the wrong monitor
     if eww active-windows 2>/dev/null | grep -q "sensor-panel"; then
         SENSOR_Y=$(hyprctl monitors -j 2>/dev/null | jq -r ".[] | select(.name==\"$SENSOR\") | .y")
         PANEL_Y=$(hyprctl layers 2>/dev/null | grep -A0 "hypr-os-sensor" | grep -oP 'xywh: \d+ \K\d+')
         if [[ -n "$PANEL_Y" && "$PANEL_Y" != "$SENSOR_Y" ]]; then
-            # Sensor panel is on wrong monitor! Reopen on correct one.
             ~/.config/hypr/scripts/sensor-panel.sh 2>/dev/null &
         fi
     fi
