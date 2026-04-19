@@ -21,22 +21,22 @@
     background-color: alpha(@bg_dim, 0.62);
     border: 2px solid @accent;
     border-radius: 8px;
-    padding: 8px 12px;
+    padding: 4px 10px;
 }
 
 .sensor-card-header {
-    padding-bottom: 4px;
+    padding-bottom: 2px;
     border-bottom: 1px solid alpha(@accent_dim, 0.25);
-    margin-bottom: 6px;
+    margin-bottom: 2px;
 }
 
 .sensor-card-icon {
-    font-size: 30px;
+    font-size: 26px;
     color: @accent;
 }
 
 .sensor-card-title {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 700;
     color: @fg_dim;
     letter-spacing: 0.12em;
@@ -48,16 +48,16 @@
 
 /* ── Circular gauge ────────────────────────── */
 .gauge-wrap {
-    min-width: 150px;
+    min-width: 130px;
     padding: 0 2px;
 }
 
 .gauge {
-    min-width: 150px;
-    min-height: 150px;
+    min-width: 120px;
+    min-height: 120px;
     background-color: alpha(@bg_highlight, 0.35);
     color: alpha(@accent, 0.25);
-    padding: 18px;
+    padding: 12px;
 }
 
 .gauge-ok        { color: alpha(@ok, 0.5); }
@@ -65,19 +65,19 @@
 .gauge-critical  { color: alpha(@critical, 0.7); }
 
 .gauge-inner {
-    min-width: 110px;
-    min-height: 110px;
+    min-width: 92px;
+    min-height: 92px;
 }
 
 .gauge-value {
-    font-size: 52px;
+    font-size: 44px;
     font-weight: 800;
     color: @fg;
-    margin-top: 16px;
+    margin-top: 12px;
 }
 
 .gauge-label {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 700;
     color: @fg_dim;
     letter-spacing: 0.15em;
@@ -92,29 +92,29 @@
 
 /* ── Stat lines ────────────────────────────── */
 .stat-line {
-    padding: 2px 0;
+    padding: 0;
 }
 
 .stat-line-icon {
-    font-size: 30px;
+    font-size: 26px;
     color: @accent;
-    min-width: 36px;
+    min-width: 32px;
 }
 
 .stat-line-label {
-    font-size: 30px;
+    font-size: 26px;
     color: @fg_dim;
 }
 
 .stat-line-value {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
     color: @fg;
 }
 
 /* ── Meter bars (scale widget) ─────────────── */
 .sensor-meter {
-    padding: 1px 0;
+    padding: 0;
 }
 
 .sensor-meter-label {
@@ -202,14 +202,14 @@
 }
 
 .sp-clock {
-    font-size: 50px;
+    font-size: 42px;
     font-weight: 800;
     color: @fg;
     letter-spacing: 0.04em;
 }
 
 .sp-clock-ampm {
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 700;
     color: @fg_dim;
     letter-spacing: 0.1em;
