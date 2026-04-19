@@ -48,16 +48,16 @@
 
 /* ── Circular gauge ────────────────────────── */
 .gauge-wrap {
-    min-width: 130px;
-    padding: 0 2px;
+    min-width: 160px;
+    padding: 0;
 }
 
 .gauge {
-    min-width: 120px;
-    min-height: 120px;
+    min-width: 150px;
+    min-height: 150px;
     background-color: alpha(@bg_highlight, 0.35);
     color: alpha(@accent, 0.25);
-    padding: 12px;
+    padding: 14px;
 }
 
 .gauge-ok        { color: alpha(@ok, 0.5); }
@@ -65,19 +65,19 @@
 .gauge-critical  { color: alpha(@critical, 0.7); }
 
 .gauge-inner {
-    min-width: 92px;
-    min-height: 92px;
+    min-width: 118px;
+    min-height: 118px;
 }
 
 .gauge-value {
-    font-size: 44px;
+    font-size: 56px;
     font-weight: 800;
     color: @fg;
-    margin-top: 12px;
+    margin-top: 14px;
 }
 
 .gauge-label {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
     color: @fg_dim;
     letter-spacing: 0.15em;
@@ -144,6 +144,31 @@
 .sensor-meter-ok highlight       { background-color: @accent; }
 .sensor-meter-warm highlight     { background-color: @warm; }
 .sensor-meter-critical highlight { background-color: @critical; }
+
+/* ── Stats row (below gauge) ───────────────── */
+.sp-stats-row {
+    background-color: alpha(@bg_highlight, 0.3);
+    border-radius: 6px;
+    padding: 4px 2px;
+    margin-top: 2px;
+}
+
+.sp-stat {
+    padding: 0 4px;
+}
+
+.sp-stat-val {
+    font-size: 32px;
+    font-weight: 800;
+    color: @fg;
+}
+
+.sp-stat-lbl {
+    font-size: 11px;
+    font-weight: 700;
+    color: @fg_dim;
+    letter-spacing: 0.12em;
+}
 
 /* ── Per-core bars ─────────────────────────── */
 .sp-core-grid {
