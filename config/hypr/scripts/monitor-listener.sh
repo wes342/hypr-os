@@ -33,9 +33,18 @@ while true; do
         MOVED=true
     done
 
-    # Restore focus to the workspace we were on
+    # Restore focus and cursor to primary monitor
     if $MOVED && [[ -n "$CURRENT_WS" ]]; then
         hyprctl dispatch workspace "$CURRENT_WS" 2>/dev/null
+        hyprctl dispatch focusmonitor "$PRIMARY" 2>/dev/null
+        hyprctl dispatch movecursor 1280 720 2>/dev/null
+    fi
+
+    # Ensure cursor is on primary monitor (can drift during sleep/wake)
+    FOCUSED_MON=$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused) | .name')
+    if [[ "$FOCUSED_MON" == "$SENSOR" ]]; then
+        hyprctl dispatch focusmonitor "$PRIMARY" 2>/dev/null
+        hyprctl dispatch movecursor 1280 720 2>/dev/null
     fi
 
     # Check if sensor panel eww is on the wrong monitor
