@@ -62,7 +62,7 @@ rofi -dmenu \
 <tt><b>─── Media ─────────────────────────────────────────────────────────────────────</b></tt>
 <tt>  Volume               Vol Keys                    Up / Down / Mute                </tt>
 <tt>  Playback             Media Keys                  Play / Next / Prev              </tt>
-<tt>  Mic Mute Toggle      F24                         Global mic mute (Discord/etc)   </tt>
+<tt>  Mic Mute Toggle      F24 / Mic Key               Global mic mute (Discord/etc)   </tt>
 <tt><b>─── Mouse ─────────────────────────────────────────────────────────────────────</b></tt>
 <tt>  Move Win             Super + LMB Drag            Drag to move                    </tt>
 <tt>  Resize Win           Super + RMB Drag            Drag to resize                  </tt>
