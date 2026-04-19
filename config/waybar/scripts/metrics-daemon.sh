@@ -612,14 +612,21 @@ COUNTER=0
 collect_cpu
 sleep 0.5
 while true; do
-    read_theme
     collect_cpu
-    collect_gpu
     collect_ram
     collect_net
+    # GPU: every 5th cycle (~10s) — nvidia-smi is expensive
+    if (( COUNTER % 5 == 0 )); then
+        collect_gpu
+    fi
+    # Storage + system: every 8th cycle (~16s) — disk stats change slowly
     if (( COUNTER % 8 == 0 )); then
         collect_storage
         collect_system
+    fi
+    # Theme colors: every 30th cycle (~60s) — only changes on wallpaper switch
+    if (( COUNTER % 30 == 0 )); then
+        read_theme
     fi
     COUNTER=$((COUNTER+1))
     sleep "$INTERVAL"
