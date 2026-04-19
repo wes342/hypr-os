@@ -22,6 +22,7 @@ sleep 0.5
 PANEL_Y=$(hyprctl layers 2>/dev/null | grep -A0 "hypr-os-sensor" | grep -oP 'xywh: \d+ \K\d+')
 
 if [[ "$PANEL_Y" == "$SENSOR_Y" ]]; then
+    sleep 1
     ~/.config/hypr/scripts/sensor-brightness.sh restore 2>/dev/null
     exit 0
 fi
@@ -34,6 +35,7 @@ sleep 0.5
 PANEL_Y=$(hyprctl layers 2>/dev/null | grep -A0 "hypr-os-sensor" | grep -oP 'xywh: \d+ \K\d+')
 
 if [[ "$PANEL_Y" == "$SENSOR_Y" ]]; then
+    sleep 1
     ~/.config/hypr/scripts/sensor-brightness.sh restore 2>/dev/null
     exit 0
 fi

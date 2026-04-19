@@ -47,6 +47,13 @@ while true; do
         hyprctl dispatch movecursor 1280 720 2>/dev/null
     fi
 
+    # Ensure dimmer level matches saved value
+    SAVED_DIM=$(cat "$HOME/.cache/hypr/dimmer-level" 2>/dev/null || echo 0)
+    CURRENT_DIM=$(eww get dimmer-level 2>/dev/null || echo 0)
+    if [[ "$SAVED_DIM" != "$CURRENT_DIM" && "$SAVED_DIM" != "0" ]]; then
+        eww update dimmer-level="$SAVED_DIM" 2>/dev/null
+    fi
+
     # Check if sensor panel eww is on the wrong monitor
     if eww active-windows 2>/dev/null | grep -q "sensor-panel"; then
         SENSOR_Y=$(hyprctl monitors -j 2>/dev/null | jq -r ".[] | select(.name==\"$SENSOR\") | .y")
