@@ -44,9 +44,9 @@ while true; do
         [[ "$SAVED_DIM" != "$CURRENT_DIM" ]] && eww update dimmer-level="$SAVED_DIM" 2>/dev/null
     fi
 
-    # Check if sensor panel eww is on wrong monitor
+    # Check if sensor panel eww is on wrong monitor (primary Y is near 0)
     PANEL_Y=$(hyprctl layers 2>/dev/null | grep -A0 "hypr-os-sensor" | grep -oP 'xywh: \d+ \K\d+')
-    if [[ -n "$PANEL_Y" && "$PANEL_Y" != "$SENSOR_Y" ]]; then
+    if [[ -n "$PANEL_Y" ]] && (( PANEL_Y < 1000 )); then
         ~/.config/hypr/scripts/sensor-panel.sh 2>/dev/null &
     fi
 done
