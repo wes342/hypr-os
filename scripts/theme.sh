@@ -524,8 +524,7 @@ pkill -USR1 kitty 2>/dev/null || true
 # Cava
 pkill -USR2 cava 2>/dev/null || true
 
-# btop (no signal reload support — kill so it restarts with new theme)
-pkill -x btop 2>/dev/null || true
+# btop: no signal reload support — picks up new theme on next launch
 
 # Eww sensor panel — reload to pick up new colors.css, reopen on correct monitor
 if pgrep -x eww >/dev/null 2>&1; then
