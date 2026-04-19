@@ -42,7 +42,7 @@
 
 ;; Circular gauge — large, readable
 (defwidget gauge [value ?thickness ?label ?status]
-  (box :class "gauge-wrap" :orientation "v" :space-evenly false :spacing 4
+  (box :class "gauge-wrap" :orientation "v" :space-evenly false :spacing 1
        :halign "center"
     (overlay
       (circular-progress :class "gauge gauge-${status ?: 'ok'}"
@@ -75,93 +75,75 @@
 ;; ── CPU Panel ───────────────────────────────
 (defwidget cpu-panel []
   (sensor-card :title "CPU" :icon "" :class "cpu"
-    (box :orientation "v" :space-evenly false :spacing 0 :vexpand true
+    (box :orientation "v" :space-evenly false :spacing 2 :vexpand true
       ;; Gauge centered on top
       (gauge :value {cpu.temp_c ?: 0} :thickness 8
              :label "°C" :status {cpu.status ?: "ok"})
-      ;; Stats row
-      (box :class "sp-stats-row" :orientation "h" :space-evenly true :spacing 2
-        (box :class "sp-stat" :orientation "v" :space-evenly false :halign "center"
-          (label :class "sp-stat-val" :text "${cpu.usage_pct ?: 0}%")
-          (label :class "sp-stat-lbl" :text "USAGE"))
-        (box :class "sp-stat" :orientation "v" :space-evenly false :halign "center"
-          (label :class "sp-stat-val" :text "${cpu.freq_mhz ?: 0}")
-          (label :class "sp-stat-lbl" :text "MHZ"))
-        (box :class "sp-stat" :orientation "v" :space-evenly false :halign "center"
-          (label :class "sp-stat-val" :text "${cpu.cores_count ?: 0}")
-          (label :class "sp-stat-lbl" :text "CORES")))
+      ;; Stats below gauge
+      (stat-line :icon "󰓅" :label "Usage" :value "${cpu.usage_pct ?: 0}%")
+      (stat-line :icon "󰾆" :label "Freq"  :value "${cpu.freq_mhz ?: 0} MHz")
+      (stat-line :icon "󰍛" :label "Cores" :value "${cpu.cores_count ?: 0}")
       ;; Graph at bottom
       (graph :class "sp-graph" :value {cpu.usage_pct ?: 0}
              :time-range "60s" :max 100 :min 0 :dynamic false
-             :thickness 2 :line-style "round" :height 50 :vexpand true))))
+             :thickness 2 :line-style "round" :height 24 :vexpand true))))
 
 ;; ── GPU Panel ───────────────────────────────
 (defwidget gpu-panel []
   (sensor-card :title "GPU" :icon "" :class "gpu"
-    (box :orientation "v" :space-evenly false :spacing 0 :vexpand true
+    (box :orientation "v" :space-evenly false :spacing 2 :vexpand true
       ;; Gauge centered on top
       (gauge :value {gpu.temp_c ?: 0} :thickness 8
              :label "°C" :status {gpu.status ?: "ok"})
-      ;; Stats row
-      (box :class "sp-stats-row" :orientation "h" :space-evenly true :spacing 2
-        (box :class "sp-stat" :orientation "v" :space-evenly false :halign "center"
-          (label :class "sp-stat-val" :text "${gpu.util_pct ?: 0}%")
-          (label :class "sp-stat-lbl" :text "UTIL"))
-        (box :class "sp-stat" :orientation "v" :space-evenly false :halign "center"
-          (label :class "sp-stat-val" :text "${gpu.power_w ?: 0}W")
-          (label :class "sp-stat-lbl" :text "POWER"))
-        (box :class "sp-stat" :orientation "v" :space-evenly false :halign "center"
-          (label :class "sp-stat-val" :text "${gpu.fan_pct ?: 0}%")
-          (label :class "sp-stat-lbl" :text "FAN"))
-        (box :class "sp-stat" :orientation "v" :space-evenly false :halign "center"
-          (label :class "sp-stat-val" :text "${gpu.mem_pct ?: 0}%")
-          (label :class "sp-stat-lbl" :text "VRAM")))
+      ;; Stats below gauge
+      (stat-line :icon "󰾲" :label "Util"  :value "${gpu.util_pct ?: 0}%")
+      (stat-line :icon "󱐋" :label "Power" :value "${gpu.power_w ?: 0} W")
+      (stat-line :icon "󰈐" :label "Fan"   :value "${gpu.fan_pct ?: 0}%")
+      (stat-line :icon "󰍛" :label "VRAM"  :value "${gpu.mem_pct ?: 0}%")
       ;; Graph at bottom
       (graph :class "sp-graph" :value {gpu.util_pct ?: 0}
              :time-range "60s" :max 100 :min 0 :dynamic false
-             :thickness 2 :line-style "round" :height 50 :vexpand true))))
+             :thickness 2 :line-style "round" :height 24 :vexpand true))))
 
 ;; ── RAM Panel ───────────────────────────────
 (defwidget ram-panel []
   (sensor-card :title "MEMORY" :icon "󰍛" :class "ram"
-    (box :orientation "v" :space-evenly false :spacing 0 :vexpand true
+    (box :orientation "v" :space-evenly false :spacing 2 :vexpand true
       ;; Gauge centered on top
       (gauge :value {ram.used_pct ?: 0} :thickness 8
              :label "%" :status {ram.status ?: "ok"})
-      ;; Stats row
-      (box :class "sp-stats-row" :orientation "h" :space-evenly true :spacing 2
-        (box :class "sp-stat" :orientation "v" :space-evenly false :halign "center"
-          (label :class "sp-stat-val" :text "${ram.used_gb ?: 0}")
-          (label :class "sp-stat-lbl" :text "USED GB"))
-        (box :class "sp-stat" :orientation "v" :space-evenly false :halign "center"
-          (label :class "sp-stat-val" :text "${ram.available_gb ?: 0}")
-          (label :class "sp-stat-lbl" :text "FREE GB"))
-        (box :class "sp-stat" :orientation "v" :space-evenly false :halign "center"
-          (label :class "sp-stat-val" :text "${ram.swap_pct ?: 0}%")
-          (label :class "sp-stat-lbl" :text "SWAP")))
+      ;; Stats below gauge
+      (stat-line :icon "󰧮" :label "Used"  :value "${ram.used_gb ?: 0} GiB")
+      (stat-line :icon "󰋼" :label "Free"  :value "${ram.available_gb ?: 0} GiB")
+      (stat-line :icon "󰆦" :label "Swap"  :value "${ram.swap_pct ?: 0}%")
       ;; Graph at bottom
       (graph :class "sp-graph" :value {ram.used_pct ?: 0}
              :time-range "60s" :max 100 :min 0 :dynamic false
-             :thickness 2 :line-style "round" :height 50 :vexpand true))))
+             :thickness 2 :line-style "round" :height 24 :vexpand true))))
 
-;; ── Info Panel (Storage + Network + System) ─
+;; ── Info Panel (Storage + Clock + System) ───
 (defwidget info-panel []
-  (sensor-card :title "INFO" :icon "󰋊" :class "info"
+  (sensor-card :title "INFO" :icon "" :class "info"
     (box :orientation "v" :space-evenly false :spacing 2 :vexpand true
-      ;; Drive bars
+      ;; Drive bars (only / and /home)
+      (sensor-meter :label "󰉋 /"
+                    :value "${storage.root_pct ?: 0}%"
+                    :pct {storage.root_pct ?: 0}
+                    :status {storage.root_pct ?: 0 >= 90 ? "critical" : storage.root_pct ?: 0 >= 75 ? "warm" : "ok"})
       (for d in {storage.drives ?: "[]"}
         (sensor-meter :label "󰉋 ${d.mount}"
                       :value "${d.used_pct}%"
                       :pct {d.used_pct}
+                      :visible {d.mount == "/home"}
                       :status {d.used_pct >= 90 ? "critical" : d.used_pct >= 75 ? "warm" : "ok"}))
       ;; Clock
-      (box :class "sp-clock-wrap" :orientation "v" :space-evenly false :spacing 0 :halign "center"
+      (box :class "sp-clock-wrap" :orientation "h" :space-evenly false :spacing 6 :halign "center"
         (label :class "sp-clock" :text {formattime(EWW_TIME, "%I:%M")})
         (label :class "sp-clock-ampm" :text {formattime(EWW_TIME, "%p")}))
-      ;; System info
-      (stat-line :icon "󰥔" :label "Up" :value {sysinfo.uptime ?: "—"})
-      (stat-line :icon "" :label "Load" :value "${sysinfo.load1 ?: '—'} ${sysinfo.load5 ?: ''}")
-      (stat-line :icon "" :label ""     :value {sysinfo.kernel ?: "—"}))))
+      ;; System info (same style as other panels)
+      (stat-line :icon "󰥔" :label "Uptime" :value {sysinfo.uptime ?: "—"})
+      (stat-line :icon "" :label "Load"   :value "${sysinfo.load1 ?: '—'} ${sysinfo.load5 ?: ''}")
+      (stat-line :icon "" :label "Kernel" :value {sysinfo.kernel ?: "—"}))))
 
 ;; ── Sensor panel windows ────────────────────
 ;; Two definitions: sensor-panel-0 and sensor-panel-1 for each possible

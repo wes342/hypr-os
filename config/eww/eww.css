@@ -13,7 +13,7 @@
 
 .sensor-panel {
     background-color: alpha(@bg, 0.68);
-    padding: 3px 8px;
+    padding: 2px 6px;
 }
 
 /* ── Card ──────────────────────────────────── */
@@ -21,22 +21,22 @@
     background-color: alpha(@bg_dim, 0.62);
     border: 2px solid @accent;
     border-radius: 8px;
-    padding: 4px 10px;
+    padding: 2px 8px;
 }
 
 .sensor-card-header {
-    padding-bottom: 2px;
+    padding-bottom: 1px;
     border-bottom: 1px solid alpha(@accent_dim, 0.25);
-    margin-bottom: 2px;
+    margin-bottom: 1px;
 }
 
 .sensor-card-icon {
-    font-size: 26px;
+    font-size: 22px;
     color: @accent;
 }
 
 .sensor-card-title {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
     color: @fg_dim;
     letter-spacing: 0.12em;
@@ -53,11 +53,11 @@
 }
 
 .gauge {
-    min-width: 150px;
-    min-height: 150px;
+    min-width: 155px;
+    min-height: 155px;
     background-color: alpha(@bg_highlight, 0.35);
     color: alpha(@accent, 0.25);
-    padding: 14px;
+    padding: 12px;
 }
 
 .gauge-ok        { color: alpha(@ok, 0.5); }
@@ -65,19 +65,19 @@
 .gauge-critical  { color: alpha(@critical, 0.7); }
 
 .gauge-inner {
-    min-width: 118px;
-    min-height: 118px;
+    min-width: 125px;
+    min-height: 125px;
 }
 
 .gauge-value {
-    font-size: 56px;
+    font-size: 58px;
     font-weight: 800;
     color: @fg;
     margin-top: 14px;
 }
 
 .gauge-label {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 700;
     color: @fg_dim;
     letter-spacing: 0.15em;
@@ -96,18 +96,18 @@
 }
 
 .stat-line-icon {
-    font-size: 26px;
+    font-size: 28px;
     color: @accent;
-    min-width: 32px;
+    min-width: 34px;
 }
 
 .stat-line-label {
-    font-size: 26px;
+    font-size: 28px;
     color: @fg_dim;
 }
 
 .stat-line-value {
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 700;
     color: @fg;
 }
@@ -118,25 +118,25 @@
 }
 
 .sensor-meter-label {
-    font-size: 24px;
+    font-size: 20px;
     color: @fg_dim;
 }
 
 .sensor-meter-value {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
     color: @fg;
 }
 
 .sensor-meter-bar trough {
     background-color: alpha(@bg_highlight, 0.5);
-    border-radius: 4px;
+    border-radius: 3px;
     min-height: 12px;
 }
 
 .sensor-meter-bar highlight {
-    border-radius: 4px;
-    min-height: 12px;
+    border-radius: 3px;
+    min-height: 8px;
 }
 
 .sensor-meter-bar slider { all: unset; }
@@ -223,21 +223,21 @@
 
 /* ── Clock ─────────────────────────────────── */
 .sp-clock-wrap {
-    padding: 4px 0;
+    padding: 0;
 }
 
 .sp-clock {
-    font-size: 42px;
+    font-size: 30px;
     font-weight: 800;
     color: @fg;
     letter-spacing: 0.04em;
 }
 
 .sp-clock-ampm {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     color: @fg_dim;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.06em;
 }
 
 
