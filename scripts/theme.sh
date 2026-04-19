@@ -330,11 +330,10 @@ pkill -USR1 kitty 2>/dev/null || true
 # Cava
 pkill -USR2 cava 2>/dev/null || true
 
-# Eww sensor panel — reload to pick up new colors.css
+# Eww sensor panel — reload to pick up new colors.css, reopen on correct monitor
 if pgrep -x eww >/dev/null 2>&1; then
     eww reload 2>/dev/null || true
-    # Restore dimmer brightness after reload (runs in background to survive script exit)
-    (sleep 1 && ~/.config/hypr/scripts/sensor-brightness.sh restore) &
+    (sleep 1 && ~/.config/hypr/scripts/sensor-panel.sh) &
 fi
 
 # Notify

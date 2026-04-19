@@ -168,19 +168,14 @@
       (stat-line :icon "" :label "Load" :value "${sysinfo.load1 ?: '—'} ${sysinfo.load5 ?: ''}")
       (stat-line :icon "" :label ""     :value {sysinfo.kernel ?: "—"}))))
 
-;; ── Sensor panel window ─────────────────────
-;; 4 panels in a single row, filling the full monitor
-;; Monitor index 0 = HDMI-A-2 (verify: hyprctl monitors)
-;; dimmer-level is 0-8, maps to CSS class dimmer-0 through dimmer-8
+;; ── Sensor panel windows ────────────────────
+;; Two definitions: sensor-panel-0 and sensor-panel-1 for each possible
+;; monitor index. The sensor-panel.sh script detects which index HDMI-A-2
+;; is on and opens the correct one. This prevents widgets from ever
+;; appearing on the wrong monitor after hotplug/sleep.
 (defvar dimmer-level 0)
 
-(defwindow sensor-panel
-  :monitor 1
-  :geometry (geometry :x "0" :y "0" :width "100%" :height "100%" :anchor "center")
-  :stacking "overlay"
-  :focusable false
-  :exclusive false
-  :namespace "hypr-os-sensor"
+(defwidget sensor-panel-content []
   (overlay
     (box :class "sensor-panel" :orientation "h" :space-evenly true :spacing 4
       (cpu-panel)
@@ -188,6 +183,24 @@
       (ram-panel)
       (info-panel))
     (box :class "sensor-dimmer dimmer-${dimmer-level}")))
+
+(defwindow sensor-panel-0
+  :monitor 0
+  :geometry (geometry :x "0" :y "0" :width "100%" :height "100%" :anchor "center")
+  :stacking "overlay"
+  :focusable false
+  :exclusive false
+  :namespace "hypr-os-sensor"
+  (sensor-panel-content))
+
+(defwindow sensor-panel-1
+  :monitor 1
+  :geometry (geometry :x "0" :y "0" :width "100%" :height "100%" :anchor "center")
+  :stacking "overlay"
+  :focusable false
+  :exclusive false
+  :namespace "hypr-os-sensor"
+  (sensor-panel-content))
 
 
 ;; ╔══════════════════════════════════════════╗

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Periodically ensures no windows are on the sensor panel monitor.
-# Runs every 3 seconds - lightweight check, only acts if needed.
+# Periodically ensures:
+# 1. No windows are on the sensor panel monitor
+# 2. Eww sensor panel is on the correct monitor (not the primary)
+# Runs every 3 seconds.
 
 SENSOR="HDMI-A-2"
 PRIMARY="DP-3"
@@ -11,19 +13,26 @@ while true; do
     # Skip if primary not connected
     hyprctl monitors -j 2>/dev/null | jq -e ".[] | select(.name==\"$PRIMARY\")" >/dev/null 2>&1 || continue
 
-    # Get sensor monitor ID
     SENSOR_ID=$(hyprctl monitors -j 2>/dev/null | jq -r ".[] | select(.name==\"$SENSOR\") | .id")
-    [[ -z "$SENSOR_ID" ]] && continue
+    [[ -z "$SENSOR_ID" || "$SENSOR_ID" == "null" ]] && continue
 
     # Move any workspaces stuck on sensor monitor to primary
-    STRAY_WS=$(hyprctl workspaces -j 2>/dev/null | jq -r ".[] | select(.monitor==\"$SENSOR\" and .id != 11) | .id")
-    for ws in $STRAY_WS; do
+    for ws in $(hyprctl workspaces -j 2>/dev/null | jq -r ".[] | select(.monitor==\"$SENSOR\") | .id"); do
         hyprctl dispatch moveworkspacetomonitor "$ws" "$PRIMARY" 2>/dev/null
     done
 
     # Move any windows stuck on sensor monitor
-    STRAY_WIN=$(hyprctl clients -j 2>/dev/null | jq -r ".[] | select(.monitor==$SENSOR_ID) | .address")
-    for addr in $STRAY_WIN; do
+    for addr in $(hyprctl clients -j 2>/dev/null | jq -r ".[] | select(.monitor==$SENSOR_ID) | .address"); do
         hyprctl dispatch movetoworkspacesilent "1,address:$addr" 2>/dev/null
     done
+
+    # Check if sensor panel eww is on the wrong monitor
+    if eww active-windows 2>/dev/null | grep -q "sensor-panel"; then
+        SENSOR_Y=$(hyprctl monitors -j 2>/dev/null | jq -r ".[] | select(.name==\"$SENSOR\") | .y")
+        PANEL_Y=$(hyprctl layers 2>/dev/null | grep -A0 "hypr-os-sensor" | grep -oP 'xywh: \d+ \K\d+')
+        if [[ -n "$PANEL_Y" && "$PANEL_Y" != "$SENSOR_Y" ]]; then
+            # Sensor panel is on wrong monitor! Reopen on correct one.
+            ~/.config/hypr/scripts/sensor-panel.sh 2>/dev/null &
+        fi
+    fi
 done
