@@ -21,7 +21,7 @@
     background-color: alpha(@bg_dim, 0.52);
     border: 2px solid @accent;
     border-radius: 8px;
-    padding: 4px 14px;
+    padding: 4px 18px;
 }
 
 .sensor-card-header {
@@ -31,15 +31,15 @@
 }
 
 .sensor-card-icon {
-    font-size: 26px;
+    font-size: 30px;
     color: @accent;
 }
 
 .sensor-card-title {
-    font-size: 18px;
+    font-size: 24px;
     font-weight: 700;
     color: @fg_dim;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
 }
 
 .sensor-card-body {
@@ -179,7 +179,7 @@
 
 /* ── Kernel label (bottom center) ──────────── */
 .sp-kernel {
-    font-size: 14px;
+    font-size: 20px;
     color: @fg_dim;
     letter-spacing: 0.06em;
 }
@@ -241,14 +241,14 @@
 }
 
 .sp-clock {
-    font-size: 44px;
+    font-size: 52px;
     font-weight: 800;
     color: @fg;
     letter-spacing: 0.04em;
 }
 
 .sp-clock-ampm {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 700;
     color: @fg_dim;
     letter-spacing: 0.06em;

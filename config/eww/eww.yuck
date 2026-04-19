@@ -94,7 +94,7 @@
 
 ;; ── GPU Panel ───────────────────────────────
 (defwidget gpu-panel []
-  (sensor-card :title "GPU" :icon "" :class "gpu"
+  (sensor-card :title "GPU" :icon "󰢮" :class "gpu"
     (box :orientation "v" :space-evenly false :spacing 2 :vexpand true
       ;; Gauge centered on top
       (gauge :value {gpu.temp_c ?: 0} :thickness 8
@@ -125,27 +125,33 @@
              :time-range "60s" :max 100 :min 0 :dynamic false
              :thickness 2 :line-style "round" :height 18 :vexpand true))))
 
-;; ── Info Panel (Clock + System + Storage) ───
+;; ── Info Panel (Clock + System + Storage + Kernel) ───
 (defwidget info-panel []
   (sensor-card :title "SYSTEM" :icon "󰟀" :class "info"
-    (box :orientation "v" :space-evenly false :spacing 2 :vexpand true
+    (box :orientation "v" :space-evenly false :spacing 0 :vexpand true
       ;; Clock (large, centered)
-      (box :class "sp-clock-wrap" :orientation "h" :space-evenly false :spacing 6 :halign "center"
+      (box :class "sp-clock-wrap" :orientation "h" :space-evenly false :spacing 8 :halign "center"
         (label :class "sp-clock" :text {formattime(EWW_TIME, "%I:%M")})
         (label :class "sp-clock-ampm" :text {formattime(EWW_TIME, "%p")}))
+      ;; Spacer after clock
+      (box :style "min-height: 4px;")
       ;; System stats
       (stat-line :icon "󰥔" :label "Uptime" :value {sysinfo.uptime ?: "—"})
       (stat-line :icon "" :label "Load"   :value "${sysinfo.load1 ?: '—'} ${sysinfo.load5 ?: ''}")
       ;; Separator
       (separator)
-      ;; Root drive
+      ;; Drives
       (sensor-meter :label "󰉋 /"     :value "${storage.root_pct ?: 0}%"
+                    :pct {storage.root_pct ?: 0}
+                    :status {storage.root_pct ?: 0 >= 90 ? "critical" : storage.root_pct ?: 0 >= 75 ? "warm" : "ok"})
+      (sensor-meter :label "󰉋 /home" :value "${storage.root_pct ?: 0}%"
                     :pct {storage.root_pct ?: 0}
                     :status {storage.root_pct ?: 0 >= 90 ? "critical" : storage.root_pct ?: 0 >= 75 ? "warm" : "ok"})
       ;; Separator
       (separator)
-      ;; Kernel centered at bottom
-      (label :class "sp-kernel" :text {sysinfo.kernel ?: "—"} :halign "center"))))
+      ;; Kernel pinned to bottom center
+      (box :vexpand true :valign "end"
+        (label :class "sp-kernel" :text {sysinfo.kernel ?: "—"} :halign "center")))))
 
 ;; ── Sensor panel windows ────────────────────
 ;; Two definitions: sensor-panel-0 and sensor-panel-1 for each possible
