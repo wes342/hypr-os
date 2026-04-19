@@ -72,6 +72,10 @@
     (label :class "stat-line-label" :text label :hexpand true :xalign 0)
     (label :class "stat-line-value" :text value :xalign 1)))
 
+;; Horizontal separator line
+(defwidget separator []
+  (box :class "sp-separator"))
+
 ;; ── CPU Panel ───────────────────────────────
 (defwidget cpu-panel []
   (sensor-card :title "CPU" :icon "" :class "cpu"
@@ -86,7 +90,7 @@
       ;; Graph at bottom
       (graph :class "sp-graph" :value {cpu.usage_pct ?: 0}
              :time-range "60s" :max 100 :min 0 :dynamic false
-             :thickness 2 :line-style "round" :height 24 :vexpand true))))
+             :thickness 2 :line-style "round" :height 18 :vexpand true))))
 
 ;; ── GPU Panel ───────────────────────────────
 (defwidget gpu-panel []
@@ -103,7 +107,7 @@
       ;; Graph at bottom
       (graph :class "sp-graph" :value {gpu.util_pct ?: 0}
              :time-range "60s" :max 100 :min 0 :dynamic false
-             :thickness 2 :line-style "round" :height 24 :vexpand true))))
+             :thickness 2 :line-style "round" :height 18 :vexpand true))))
 
 ;; ── RAM Panel ───────────────────────────────
 (defwidget ram-panel []
@@ -119,22 +123,29 @@
       ;; Graph at bottom
       (graph :class "sp-graph" :value {ram.used_pct ?: 0}
              :time-range "60s" :max 100 :min 0 :dynamic false
-             :thickness 2 :line-style "round" :height 24 :vexpand true))))
+             :thickness 2 :line-style "round" :height 18 :vexpand true))))
 
-;; ── Info Panel (Clock + Storage + System) ───
+;; ── Info Panel (Clock + System + Storage) ───
 (defwidget info-panel []
-  (sensor-card :title "INFO" :icon "" :class "info"
+  (sensor-card :title "SYSTEM" :icon "󰟀" :class "info"
     (box :orientation "v" :space-evenly false :spacing 2 :vexpand true
-      ;; Clock
+      ;; Clock (large, centered)
       (box :class "sp-clock-wrap" :orientation "h" :space-evenly false :spacing 6 :halign "center"
         (label :class "sp-clock" :text {formattime(EWW_TIME, "%I:%M")})
         (label :class "sp-clock-ampm" :text {formattime(EWW_TIME, "%p")}))
-      ;; Root drive only
-      (stat-line :icon "󰉋" :label "Disk" :value "${storage.root_pct ?: 0}%")
-      ;; System info
+      ;; System stats
       (stat-line :icon "󰥔" :label "Uptime" :value {sysinfo.uptime ?: "—"})
       (stat-line :icon "" :label "Load"   :value "${sysinfo.load1 ?: '—'} ${sysinfo.load5 ?: ''}")
-      (stat-line :icon "" :label "Kernel" :value {sysinfo.kernel ?: "—"}))))
+      ;; Separator
+      (separator)
+      ;; Root drive
+      (sensor-meter :label "󰉋 /"     :value "${storage.root_pct ?: 0}%"
+                    :pct {storage.root_pct ?: 0}
+                    :status {storage.root_pct ?: 0 >= 90 ? "critical" : storage.root_pct ?: 0 >= 75 ? "warm" : "ok"})
+      ;; Separator
+      (separator)
+      ;; Kernel centered at bottom
+      (label :class "sp-kernel" :text {sysinfo.kernel ?: "—"} :halign "center"))))
 
 ;; ── Sensor panel windows ────────────────────
 ;; Two definitions: sensor-panel-0 and sensor-panel-1 for each possible
