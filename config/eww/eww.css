@@ -13,7 +13,7 @@
 
 .sensor-panel {
     background-color: alpha(@bg, 0.68);
-    padding: 2px 6px;
+    padding: 4px 8px;
 }
 
 /* ── Card ──────────────────────────────────── */
@@ -21,7 +21,7 @@
     background-color: alpha(@bg_dim, 0.62);
     border: 2px solid @accent;
     border-radius: 8px;
-    padding: 2px 8px;
+    padding: 4px 10px;
 }
 
 .sensor-card-header {
@@ -96,18 +96,18 @@
 }
 
 .stat-line-icon {
-    font-size: 28px;
+    font-size: 30px;
     color: @accent;
-    min-width: 34px;
+    min-width: 36px;
 }
 
 .stat-line-label {
-    font-size: 28px;
+    font-size: 30px;
     color: @fg_dim;
 }
 
 .stat-line-value {
-    font-size: 30px;
+    font-size: 32px;
     font-weight: 700;
     color: @fg;
 }
@@ -227,14 +227,14 @@
 }
 
 .sp-clock {
-    font-size: 30px;
+    font-size: 38px;
     font-weight: 800;
     color: @fg;
     letter-spacing: 0.04em;
 }
 
 .sp-clock-ampm {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 700;
     color: @fg_dim;
     letter-spacing: 0.06em;

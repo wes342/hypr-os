@@ -121,26 +121,17 @@
              :time-range "60s" :max 100 :min 0 :dynamic false
              :thickness 2 :line-style "round" :height 24 :vexpand true))))
 
-;; ── Info Panel (Storage + Clock + System) ───
+;; ── Info Panel (Clock + Storage + System) ───
 (defwidget info-panel []
   (sensor-card :title "INFO" :icon "" :class "info"
     (box :orientation "v" :space-evenly false :spacing 2 :vexpand true
-      ;; Drive bars (only / and /home)
-      (sensor-meter :label "󰉋 /"
-                    :value "${storage.root_pct ?: 0}%"
-                    :pct {storage.root_pct ?: 0}
-                    :status {storage.root_pct ?: 0 >= 90 ? "critical" : storage.root_pct ?: 0 >= 75 ? "warm" : "ok"})
-      (for d in {storage.drives ?: "[]"}
-        (sensor-meter :label "󰉋 ${d.mount}"
-                      :value "${d.used_pct}%"
-                      :pct {d.used_pct}
-                      :visible {d.mount == "/home"}
-                      :status {d.used_pct >= 90 ? "critical" : d.used_pct >= 75 ? "warm" : "ok"}))
       ;; Clock
       (box :class "sp-clock-wrap" :orientation "h" :space-evenly false :spacing 6 :halign "center"
         (label :class "sp-clock" :text {formattime(EWW_TIME, "%I:%M")})
         (label :class "sp-clock-ampm" :text {formattime(EWW_TIME, "%p")}))
-      ;; System info (same style as other panels)
+      ;; Root drive only
+      (stat-line :icon "󰉋" :label "Disk" :value "${storage.root_pct ?: 0}%")
+      ;; System info
       (stat-line :icon "󰥔" :label "Uptime" :value {sysinfo.uptime ?: "—"})
       (stat-line :icon "" :label "Load"   :value "${sysinfo.load1 ?: '—'} ${sysinfo.load5 ?: ''}")
       (stat-line :icon "" :label "Kernel" :value {sysinfo.kernel ?: "—"}))))
