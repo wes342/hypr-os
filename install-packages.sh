@@ -60,7 +60,7 @@ PACMAN_PKGS=(
     zathura zathura-pdf-mupdf
 
     # Tooling the scripts rely on
-    imagemagick jq python curl bc
+    imagemagick jq python curl bc socat
 
     # Clipboard, screenshotting, screen recording, color picker
     wl-clipboard cliphist grim slurp satty wf-recorder hyprpicker
