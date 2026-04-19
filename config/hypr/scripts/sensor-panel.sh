@@ -2,27 +2,28 @@
 # Open the eww sensor panel on HDMI-A-2 only.
 # Tries sensor-panel-0 and sensor-panel-1 to find which eww monitor
 # index maps to HDMI-A-2, then keeps only the correct one open.
+# Will NOT close a panel that's already on the correct monitor.
 
 SENSOR_NAME="HDMI-A-2"
 PRIMARY_NAME="DP-3"
 
 # Check if sensor monitor is connected
 SENSOR_Y=$(hyprctl monitors -j 2>/dev/null | jq -r ".[] | select(.name==\"$SENSOR_NAME\") | .y")
-PRIMARY_Y=$(hyprctl monitors -j 2>/dev/null | jq -r ".[] | select(.name==\"$PRIMARY_NAME\") | .y")
 if [[ -z "$SENSOR_Y" || "$SENSOR_Y" == "null" ]]; then
     eww close sensor-panel-0 sensor-panel-1 2>/dev/null
     exit 0
 fi
 
-# Helper: check if panel Y is on the sensor monitor (not the primary)
-on_sensor() {
-    local py="$1"
-    [[ -z "$py" ]] && return 1
-    # Panel is on sensor if its Y is NOT near the primary monitor
-    (( py > PRIMARY_Y + 1000 ))
-}
+# If a panel is already open and on the sensor monitor, do nothing
+if eww active-windows 2>/dev/null | grep -q "sensor-panel"; then
+    PANEL_Y=$(hyprctl layers 2>/dev/null | grep -A0 "hypr-os-sensor" | grep -oP 'xywh: \d+ \K\d+')
+    if [[ -n "$PANEL_Y" ]] && (( PANEL_Y > 1000 )); then
+        # Already on correct monitor
+        exit 0
+    fi
+fi
 
-# Close any existing panels
+# Close any panels on the wrong monitor
 eww close sensor-panel-0 sensor-panel-1 2>/dev/null
 sleep 0.3
 
@@ -31,7 +32,7 @@ eww open sensor-panel-0 2>/dev/null
 sleep 0.5
 PANEL_Y=$(hyprctl layers 2>/dev/null | grep -A0 "hypr-os-sensor" | grep -oP 'xywh: \d+ \K\d+')
 
-if on_sensor "$PANEL_Y"; then
+if [[ -n "$PANEL_Y" ]] && (( PANEL_Y > 1000 )); then
     sleep 1
     ~/.config/hypr/scripts/sensor-brightness.sh restore 2>/dev/null
     exit 0
@@ -44,7 +45,7 @@ eww open sensor-panel-1 2>/dev/null
 sleep 0.5
 PANEL_Y=$(hyprctl layers 2>/dev/null | grep -A0 "hypr-os-sensor" | grep -oP 'xywh: \d+ \K\d+')
 
-if on_sensor "$PANEL_Y"; then
+if [[ -n "$PANEL_Y" ]] && (( PANEL_Y > 1000 )); then
     sleep 1
     ~/.config/hypr/scripts/sensor-brightness.sh restore 2>/dev/null
     exit 0

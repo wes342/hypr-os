@@ -18,7 +18,6 @@ while true; do
     [[ -z "$SENSOR_INFO" ]] && continue
 
     SENSOR_ID=$(echo "$SENSOR_INFO" | jq -r '.id')
-    SENSOR_Y=$(echo "$SENSOR_INFO" | jq -r '.y')
     FOCUSED_MON=$(echo "$MONITORS" | jq -r '.[] | select(.focused) | .name')
 
     # Fix cursor if stuck on sensor monitor
@@ -27,7 +26,7 @@ while true; do
         hyprctl dispatch movecursor 1280 720 2>/dev/null
     fi
 
-    # Check for stray windows on sensor monitor (single hyprctl call)
+    # Check for stray windows on sensor monitor
     STRAY=$(hyprctl clients -j 2>/dev/null | jq -r ".[] | select(.monitor==$SENSOR_ID) | .address")
     if [[ -n "$STRAY" ]]; then
         CURRENT_WS=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id')
@@ -44,7 +43,13 @@ while true; do
         [[ "$SAVED_DIM" != "$CURRENT_DIM" ]] && eww update dimmer-level="$SAVED_DIM" 2>/dev/null
     fi
 
-    # Check if sensor panel eww is on wrong monitor (primary Y is near 0)
+    # If no sensor panel is open, try to open one (but never close+reopen)
+    if ! eww active-windows 2>/dev/null | grep -q "sensor-panel"; then
+        ~/.config/hypr/scripts/sensor-panel.sh 2>/dev/null &
+        continue
+    fi
+
+    # If panel is on wrong monitor (Y < 1000 means it's on primary), fix it
     PANEL_Y=$(hyprctl layers 2>/dev/null | grep -A0 "hypr-os-sensor" | grep -oP 'xywh: \d+ \K\d+')
     if [[ -n "$PANEL_Y" ]] && (( PANEL_Y < 1000 )); then
         ~/.config/hypr/scripts/sensor-panel.sh 2>/dev/null &
