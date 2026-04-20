@@ -98,7 +98,6 @@
       ;; Stats below gauge
       (stat-line :icon "󰾲" :label "Util"  :value "${gpu.util_pct ?: 0}%")
       (stat-line :icon "󱐋" :label "Power" :value "${gpu.power_w ?: 0} W")
-      (stat-line :icon "󰈐" :label "Fan"   :value "${gpu.fan_pct ?: 0}%")
       (stat-line :icon "󰍛" :label "VRAM"  :value "${gpu.mem_pct ?: 0}%"))))
 
 ;; ── RAM Panel ───────────────────────────────

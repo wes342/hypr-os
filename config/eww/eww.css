@@ -12,13 +12,13 @@
    ╚══════════════════════════════════════════╝ */
 
 .sensor-panel {
-    background-color: alpha(@bg, 0.40);
+    background-color: alpha(@bg, 0.15);
     padding: 4px 8px;
 }
 
 /* ── Card ──────────────────────────────────── */
 .sensor-card {
-    background-color: alpha(@bg_dim, 0.35);
+    background-color: alpha(@bg_dim, 0.20);
     border: 2px solid @accent;
     border-radius: 8px;
     padding: 4px 18px;
@@ -73,7 +73,7 @@
     font-size: 72px;
     font-weight: 800;
     color: @fg;
-    margin-top: 46px;
+    margin-top: 36px;
 }
 
 .gauge-label {
