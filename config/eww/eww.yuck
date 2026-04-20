@@ -48,7 +48,7 @@
       (circular-progress :class "gauge gauge-${status ?: 'ok'}"
                          :value {value ?: 0}
                          :start-at 75
-                         :thickness {thickness ?: 8}
+                         :thickness {thickness ?: 12}
                          :clockwise true
         (box :class "gauge-inner" :orientation "v"
              :space-evenly false :valign "center" :halign "center"
@@ -78,8 +78,8 @@
 
 ;; ── CPU Panel ───────────────────────────────
 (defwidget cpu-panel []
-  (sensor-card :title "CPU" :icon "" :class "cpu"
-    (box :orientation "v" :space-evenly false :spacing 2 :vexpand true
+  (sensor-card :title "CPU" :icon "󰍛" :class "cpu"
+    (box :orientation "v" :space-evenly false :spacing 4 :vexpand true
       ;; Gauge centered on top
       (gauge :value {cpu.temp_c ?: 0} :thickness 8
              :label "°C" :status {cpu.status ?: "ok"})
@@ -95,7 +95,7 @@
 ;; ── GPU Panel ───────────────────────────────
 (defwidget gpu-panel []
   (sensor-card :title "GPU" :icon "󰢮" :class "gpu"
-    (box :orientation "v" :space-evenly false :spacing 2 :vexpand true
+    (box :orientation "v" :space-evenly false :spacing 4 :vexpand true
       ;; Gauge centered on top
       (gauge :value {gpu.temp_c ?: 0} :thickness 8
              :label "°C" :status {gpu.status ?: "ok"})
@@ -112,7 +112,7 @@
 ;; ── RAM Panel ───────────────────────────────
 (defwidget ram-panel []
   (sensor-card :title "MEMORY" :icon "󰍛" :class "ram"
-    (box :orientation "v" :space-evenly false :spacing 2 :vexpand true
+    (box :orientation "v" :space-evenly false :spacing 4 :vexpand true
       ;; Gauge centered on top
       (gauge :value {ram.used_pct ?: 0} :thickness 8
              :label "%" :status {ram.status ?: "ok"})

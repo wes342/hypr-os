@@ -12,13 +12,13 @@
    ╚══════════════════════════════════════════╝ */
 
 .sensor-panel {
-    background-color: alpha(@bg, 0.58);
+    background-color: alpha(@bg, 0.40);
     padding: 4px 8px;
 }
 
 /* ── Card ──────────────────────────────────── */
 .sensor-card {
-    background-color: alpha(@bg_dim, 0.52);
+    background-color: alpha(@bg_dim, 0.35);
     border: 2px solid @accent;
     border-radius: 8px;
     padding: 4px 18px;
@@ -55,25 +55,25 @@
 .gauge {
     min-width: 140px;
     min-height: 140px;
-    background-color: alpha(@bg_highlight, 0.35);
-    color: alpha(@accent, 0.25);
-    padding: 12px;
+    background-color: alpha(@bg_highlight, 0.2);
+    color: alpha(@accent, 0.35);
+    padding: 10px;
 }
 
-.gauge-ok        { color: alpha(@ok, 0.5); }
-.gauge-warm      { color: alpha(@warm, 0.6); }
-.gauge-critical  { color: alpha(@critical, 0.7); }
+.gauge-ok        { color: alpha(@ok, 0.6); }
+.gauge-warm      { color: alpha(@warm, 0.7); }
+.gauge-critical  { color: alpha(@critical, 0.8); }
 
 .gauge-inner {
-    min-width: 112px;
-    min-height: 112px;
+    min-width: 110px;
+    min-height: 110px;
 }
 
 .gauge-value {
-    font-size: 52px;
+    font-size: 60px;
     font-weight: 800;
     color: @fg;
-    margin-top: 14px;
+    margin-top: 34px;
 }
 
 .gauge-label {
@@ -92,22 +92,22 @@
 
 /* ── Stat lines ────────────────────────────── */
 .stat-line {
-    padding: 0;
+    padding: 1px 0;
 }
 
 .stat-line-icon {
-    font-size: 32px;
+    font-size: 34px;
     color: @accent;
-    min-width: 38px;
+    min-width: 40px;
 }
 
 .stat-line-label {
-    font-size: 32px;
+    font-size: 34px;
     color: @fg_dim;
 }
 
 .stat-line-value {
-    font-size: 34px;
+    font-size: 36px;
     font-weight: 700;
     color: @fg;
 }

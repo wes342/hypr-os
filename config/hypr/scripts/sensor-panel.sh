@@ -16,7 +16,7 @@ fi
 
 # If a panel is already open and on the sensor monitor, do nothing
 if eww active-windows 2>/dev/null | grep -q "sensor-panel"; then
-    PANEL_Y=$(hyprctl layers 2>/dev/null | grep -A0 "hypr-os-sensor" | grep -oP 'xywh: \d+ \K\d+')
+    PANEL_Y=$(hyprctl layers 2>/dev/null | grep "hypr-os-sensor" | head -1 | grep -oP 'xywh: \d+ \K\d+')
     if [[ -n "$PANEL_Y" ]] && (( PANEL_Y > 1000 )); then
         # Already on correct monitor
         exit 0
@@ -30,7 +30,7 @@ sleep 0.3
 # Try monitor index 0
 eww open sensor-panel-0 2>/dev/null
 sleep 0.5
-PANEL_Y=$(hyprctl layers 2>/dev/null | grep -A0 "hypr-os-sensor" | grep -oP 'xywh: \d+ \K\d+')
+PANEL_Y=$(hyprctl layers 2>/dev/null | grep "hypr-os-sensor" | head -1 | grep -oP 'xywh: \d+ \K\d+')
 
 if [[ -n "$PANEL_Y" ]] && (( PANEL_Y > 1000 )); then
     sleep 1
@@ -43,7 +43,7 @@ eww close sensor-panel-0 2>/dev/null
 sleep 0.3
 eww open sensor-panel-1 2>/dev/null
 sleep 0.5
-PANEL_Y=$(hyprctl layers 2>/dev/null | grep -A0 "hypr-os-sensor" | grep -oP 'xywh: \d+ \K\d+')
+PANEL_Y=$(hyprctl layers 2>/dev/null | grep "hypr-os-sensor" | head -1 | grep -oP 'xywh: \d+ \K\d+')
 
 if [[ -n "$PANEL_Y" ]] && (( PANEL_Y > 1000 )); then
     sleep 1

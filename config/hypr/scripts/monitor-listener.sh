@@ -50,7 +50,7 @@ while true; do
     fi
 
     # If panel is on wrong monitor (Y < 1000 means it's on primary), fix it
-    PANEL_Y=$(hyprctl layers 2>/dev/null | grep -A0 "hypr-os-sensor" | grep -oP 'xywh: \d+ \K\d+')
+    PANEL_Y=$(hyprctl layers 2>/dev/null | grep "hypr-os-sensor" | head -1 | grep -oP 'xywh: \d+ \K\d+')
     if [[ -n "$PANEL_Y" ]] && (( PANEL_Y < 1000 )); then
         ~/.config/hypr/scripts/sensor-panel.sh 2>/dev/null &
     fi
