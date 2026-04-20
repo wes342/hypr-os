@@ -6,19 +6,23 @@
     color: @fg;
 }
 
+window {
+    background-color: transparent;
+}
+
 /* ╔══════════════════════════════════════════╗
    ║     SENSOR PANEL — 1920×480 @ 250 DPI   ║
    ║     Arm's-length readable               ║
    ╚══════════════════════════════════════════╝ */
 
 .sensor-panel {
-    background-color: alpha(@bg, 0.15);
+    background-color: alpha(@bg, 0.45);
     padding: 4px 8px;
 }
 
 /* ── Card ──────────────────────────────────── */
 .sensor-card {
-    background-color: alpha(@bg_dim, 0.20);
+    background-color: alpha(@bg_dim, 0.55);
     border: 2px solid @accent;
     border-radius: 8px;
     padding: 4px 18px;
@@ -256,7 +260,7 @@
 
 
 /* ── Sensor panel dimmer ───────────────────── */
-.sensor-dimmer { border-radius: 0; }
+.sensor-dimmer { border-radius: 0; background-color: transparent; }
 .dimmer-0 { background-color: alpha(black, 0.0); }
 .dimmer-1 { background-color: alpha(black, 0.1); }
 .dimmer-2 { background-color: alpha(black, 0.2); }
