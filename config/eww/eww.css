@@ -16,13 +16,13 @@ window {
    ╚══════════════════════════════════════════╝ */
 
 .sensor-panel {
-    background-color: alpha(@bg, 0.45);
+    background-color: alpha(@bg, 0.70);
     padding: 4px 8px;
 }
 
 /* ── Card ──────────────────────────────────── */
 .sensor-card {
-    background-color: alpha(@bg_dim, 0.55);
+    background-color: alpha(@bg_dim, 0.75);
     border: 2px solid @accent;
     border-radius: 8px;
     padding: 4px 18px;
