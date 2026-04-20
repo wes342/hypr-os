@@ -81,49 +81,37 @@
   (sensor-card :title "CPU" :icon "󰍛" :class "cpu"
     (box :orientation "v" :space-evenly false :spacing 4 :vexpand true
       ;; Gauge centered on top
-      (gauge :value {cpu.temp_c ?: 0} :thickness 8
+      (gauge :value {cpu.temp_c ?: 0} :thickness 16
              :label "°C" :status {cpu.status ?: "ok"})
       ;; Stats below gauge
       (stat-line :icon "󰓅" :label "Usage" :value "${cpu.usage_pct ?: 0}%")
       (stat-line :icon "󰾆" :label "Freq"  :value "${cpu.freq_mhz ?: 0} MHz")
-      (stat-line :icon "󰍛" :label "Cores" :value "${cpu.cores_count ?: 0}")
-      ;; Graph at bottom
-      (graph :class "sp-graph" :value {cpu.usage_pct ?: 0}
-             :time-range "60s" :max 100 :min 0 :dynamic false
-             :thickness 2 :line-style "round" :height 18 :vexpand true))))
+      (stat-line :icon "󰍛" :label "Cores" :value "${cpu.cores_count ?: 0}"))))
 
 ;; ── GPU Panel ───────────────────────────────
 (defwidget gpu-panel []
   (sensor-card :title "GPU" :icon "󰢮" :class "gpu"
     (box :orientation "v" :space-evenly false :spacing 4 :vexpand true
       ;; Gauge centered on top
-      (gauge :value {gpu.temp_c ?: 0} :thickness 8
+      (gauge :value {gpu.temp_c ?: 0} :thickness 16
              :label "°C" :status {gpu.status ?: "ok"})
       ;; Stats below gauge
       (stat-line :icon "󰾲" :label "Util"  :value "${gpu.util_pct ?: 0}%")
       (stat-line :icon "󱐋" :label "Power" :value "${gpu.power_w ?: 0} W")
       (stat-line :icon "󰈐" :label "Fan"   :value "${gpu.fan_pct ?: 0}%")
-      (stat-line :icon "󰍛" :label "VRAM"  :value "${gpu.mem_pct ?: 0}%")
-      ;; Graph at bottom
-      (graph :class "sp-graph" :value {gpu.util_pct ?: 0}
-             :time-range "60s" :max 100 :min 0 :dynamic false
-             :thickness 2 :line-style "round" :height 18 :vexpand true))))
+      (stat-line :icon "󰍛" :label "VRAM"  :value "${gpu.mem_pct ?: 0}%"))))
 
 ;; ── RAM Panel ───────────────────────────────
 (defwidget ram-panel []
   (sensor-card :title "MEMORY" :icon "󰍛" :class "ram"
     (box :orientation "v" :space-evenly false :spacing 4 :vexpand true
       ;; Gauge centered on top
-      (gauge :value {ram.used_pct ?: 0} :thickness 8
+      (gauge :value {ram.used_pct ?: 0} :thickness 16
              :label "%" :status {ram.status ?: "ok"})
       ;; Stats below gauge
       (stat-line :icon "󰧮" :label "Used"  :value "${ram.used_gb ?: 0} GiB")
       (stat-line :icon "󰋼" :label "Free"  :value "${ram.available_gb ?: 0} GiB")
-      (stat-line :icon "󰆦" :label "Swap"  :value "${ram.swap_pct ?: 0}%")
-      ;; Graph at bottom
-      (graph :class "sp-graph" :value {ram.used_pct ?: 0}
-             :time-range "60s" :max 100 :min 0 :dynamic false
-             :thickness 2 :line-style "round" :height 18 :vexpand true))))
+      (stat-line :icon "󰆦" :label "Swap"  :value "${ram.swap_pct ?: 0}%"))))
 
 ;; ── Info Panel (Clock + System + Storage + Kernel) ───
 (defwidget info-panel []
