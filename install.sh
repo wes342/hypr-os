@@ -125,12 +125,21 @@ chmod +x "$CONFIG_SRC/eww/scripts/"*.sh 2>/dev/null || true
 chmod +x "$SCRIPT_DIR/scripts/"*.py 2>/dev/null || true
 info "Scripts marked executable"
 
+# ── Install systemd user units for wallpaper auto-rotate ──
+SYSTEMD_USER="$HOME/.config/systemd/user"
+mkdir -p "$SYSTEMD_USER"
+cp -f "$CONFIG_SRC/systemd/user/wallpaper-rotate.service" "$SYSTEMD_USER/"
+cp -f "$CONFIG_SRC/systemd/user/wallpaper-rotate.timer" "$SYSTEMD_USER/"
+systemctl --user daemon-reload 2>/dev/null || true
+info "Installed wallpaper-rotate systemd units"
+
 # ── Install wallpaper manager to ~/.local/bin ──
 mkdir -p "$HOME/.local/bin"
 cp -f "$SCRIPT_DIR/scripts/wallpaper-app.py" "$HOME/.local/bin/hypr-wallpaper"
 cp -f "$SCRIPT_DIR/scripts/wallhaven.py" "$HOME/.local/bin/hypr-wallhaven"
-chmod +x "$HOME/.local/bin/hypr-wallpaper" "$HOME/.local/bin/hypr-wallhaven"
-info "Installed wallpaper manager to ~/.local/bin/hypr-wallpaper"
+cp -f "$SCRIPT_DIR/scripts/launcher-app.py" "$HOME/.local/bin/hypr-launcher"
+chmod +x "$HOME/.local/bin/hypr-wallpaper" "$HOME/.local/bin/hypr-wallhaven" "$HOME/.local/bin/hypr-launcher"
+info "Installed wallpaper manager and launcher to ~/.local/bin/"
 
 # ── Set HYPR_OS_DIR for theme script ─────
 SHELL_RC="$HOME/.bashrc"

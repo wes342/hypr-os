@@ -27,7 +27,7 @@ EFFECTS=(
 )
 
 CHOICE=$(printf '%s\n' "${EFFECTS[@]}" | rofi -dmenu -i \
-    -theme ~/.config/rofi/config.rasi \
+    -theme ~/.config/rofi/dmenu.rasi \
     -p "Eye Candy" \
     -matching fuzzy) || exit 0
 

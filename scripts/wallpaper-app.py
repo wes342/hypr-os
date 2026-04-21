@@ -42,8 +42,22 @@ THUMB_SIZE = 320
 CONF_DEFAULTS = {
     "api_key": "", "query": "", "categories": "111", "purity": "100",
     "sorting": "random", "atleast": "2560x1440", "ratios": "16x9",
-    "source": "local",
+    "source": "local", "auto_rotate": "off", "rotate_interval": "30",
 }
+
+# Interval options: label -> minutes
+ROTATE_INTERVALS = [
+    ("1 minute", "1"),
+    ("5 minutes", "5"),
+    ("10 minutes", "10"),
+    ("15 minutes", "15"),
+    ("30 minutes", "30"),
+    ("1 hour", "60"),
+    ("2 hours", "120"),
+    ("4 hours", "240"),
+    ("12 hours", "720"),
+    ("24 hours", "1440"),
+]
 
 
 # ── Config helpers ──
@@ -82,6 +96,48 @@ def read_theme_state():
 def write_theme_state(on: bool):
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     STATE_FILE.write_text("on" if on else "off")
+
+
+# ── Auto-rotate (systemd timer) helpers ──
+
+TIMER_UNIT = "wallpaper-rotate.timer"
+SERVICE_UNIT = "wallpaper-rotate.service"
+SYSTEMD_USER_DIR = HOME / ".config" / "systemd" / "user"
+
+
+def is_timer_active():
+    try:
+        result = subprocess.run(
+            ["systemctl", "--user", "is-active", TIMER_UNIT],
+            capture_output=True, text=True, timeout=3,
+        )
+        return result.stdout.strip() == "active"
+    except Exception:
+        return False
+
+
+def set_timer_interval(minutes):
+    """Rewrite the timer unit with the given interval and reload."""
+    timer_path = SYSTEMD_USER_DIR / TIMER_UNIT
+    timer_path.parent.mkdir(parents=True, exist_ok=True)
+    timer_path.write_text(
+        f"[Unit]\nDescription=Auto-rotate wallpaper on interval\n\n"
+        f"[Timer]\nOnActiveSec={minutes}min\nOnUnitActiveSec={minutes}min\n"
+        f"AccuracySec=1min\n\n[Install]\nWantedBy=timers.target\n"
+    )
+    subprocess.run(["systemctl", "--user", "daemon-reload"],
+                    capture_output=True, timeout=5)
+
+
+def enable_timer(minutes):
+    set_timer_interval(minutes)
+    subprocess.run(["systemctl", "--user", "enable", "--now", TIMER_UNIT],
+                    capture_output=True, timeout=5)
+
+
+def disable_timer():
+    subprocess.run(["systemctl", "--user", "disable", "--now", TIMER_UNIT],
+                    capture_output=True, timeout=5)
 
 
 def read_color(name, fallback):
@@ -208,6 +264,67 @@ def wh_download_full(item, dest_dir=None):
         return dest
     except Exception:
         return None
+
+
+# ── Cache cleanup ──
+
+def _get_current_wallpaper():
+    cp = HOME / ".cache" / "hypr" / "current_wallpaper"
+    if cp.exists():
+        return cp.read_text().strip()
+    return ""
+
+
+def clean_wh_full_cache():
+    """Remove cached full-size Wallhaven downloads except the current wallpaper."""
+    if not WH_FULL_CACHE.exists():
+        return 0
+    current = _get_current_wallpaper()
+    removed = 0
+    for f in WH_FULL_CACHE.iterdir():
+        if f.is_file() and str(f) != current:
+            f.unlink(missing_ok=True)
+            removed += 1
+    return removed
+
+
+def clean_wh_thumbs(keep_ids=None):
+    """Remove Wallhaven thumbnail cache, keeping only IDs in keep_ids."""
+    if not WH_CACHE.exists():
+        return 0
+    keep = set(keep_ids or [])
+    removed = 0
+    for f in WH_CACHE.iterdir():
+        if f.is_file():
+            # Thumbnail filenames are {id}.{ext}
+            fid = f.stem
+            if fid not in keep:
+                f.unlink(missing_ok=True)
+                removed += 1
+    return removed
+
+
+def cache_size_str():
+    """Return human-readable size of all Wallhaven cache dirs."""
+    total = 0
+    for d in [WH_CACHE, WH_FULL_CACHE]:
+        if d.exists():
+            for f in d.rglob("*"):
+                if f.is_file():
+                    total += f.stat().st_size
+    if total < 1024:
+        return f"{total} B"
+    elif total < 1024 * 1024:
+        return f"{total / 1024:.1f} KB"
+    elif total < 1024 * 1024 * 1024:
+        return f"{total / (1024 * 1024):.1f} MB"
+    return f"{total / (1024 * 1024 * 1024):.1f} GB"
+
+
+def clear_all_wh_cache():
+    """Remove all Wallhaven cached files (thumbs + full) except current wallpaper."""
+    clean_wh_thumbs(keep_ids=[])
+    clean_wh_full_cache()
 
 
 # ── Apply wallpaper ──
@@ -368,9 +485,16 @@ class WallpaperApp(Adw.Application):
         self.theme_check.connect("toggled", self._on_theme_toggled)
         header.pack_start(self.theme_check)
 
+        # Auto-rotate toggle (header shortcut)
+        self.rotate_check = Gtk.CheckButton(label="Auto-rotate")
+        self.rotate_check.set_active(self.conf.get("auto_rotate", "off") == "on")
+        self.rotate_check.set_tooltip_text("Automatically change wallpaper on a timer")
+        self.rotate_check.connect("toggled", self._on_header_rotate_toggled)
+        header.pack_start(self.rotate_check)
+
         # Settings button
         settings_btn = Gtk.Button(icon_name="emblem-system-symbolic")
-        settings_btn.set_tooltip_text("Wallhaven Settings")
+        settings_btn.set_tooltip_text("Settings")
         settings_btn.connect("clicked", self._on_settings_clicked)
         header.pack_end(settings_btn)
 
@@ -831,9 +955,13 @@ class WallpaperApp(Adw.Application):
         items = wh_search(self.conf, query=query, page=self.wh_page)
         self.wh_items = items
 
-        # Download thumbs
+        # Download thumbs for current results
         for item in items:
             wh_download_thumb(item)
+
+        # Clean up thumbnails not in current results
+        keep_ids = {item["id"] for item in items}
+        clean_wh_thumbs(keep_ids=keep_ids)
 
         GLib.idle_add(self._populate_wh_grid, items)
 
@@ -888,7 +1016,12 @@ class WallpaperApp(Adw.Application):
         path = wh_download_full(item)
         if path:
             apply_wallpaper(path, self.retheme, callback=self._refresh_theme_css)
-            GLib.idle_add(self.wh_status.set_label, f"Applied: {path.name}")
+            # Clean up other cached full-size downloads (keep only current)
+            removed = clean_wh_full_cache()
+            msg = f"Applied: {path.name}"
+            if removed:
+                msg += f"  ({removed} cached file{'s' if removed != 1 else ''} cleaned)"
+            GLib.idle_add(self.wh_status.set_label, msg)
         else:
             GLib.idle_add(self.wh_status.set_label, "Download failed")
 
@@ -929,6 +1062,15 @@ class WallpaperApp(Adw.Application):
         self.retheme = btn.get_active()
         write_theme_state(self.retheme)
 
+    def _on_header_rotate_toggled(self, btn):
+        active = btn.get_active()
+        self._conf_update("auto_rotate", "on" if active else "off")
+        if active:
+            interval = self.conf.get("rotate_interval", "30")
+            threading.Thread(target=enable_timer, args=(interval,), daemon=True).start()
+        else:
+            threading.Thread(target=disable_timer, daemon=True).start()
+
     # ── Settings ──
 
     def _on_settings_clicked(self, _btn):
@@ -951,6 +1093,32 @@ class WallpaperApp(Adw.Application):
         source_row.connect("notify::selected", self._on_source_changed)
         src_group.add(source_row)
         page.add(src_group)
+
+        # ── Auto-rotate group ──
+        rotate_group = Adw.PreferencesGroup(title="Auto-rotate")
+
+        self._rotate_switch = Adw.SwitchRow(title="Change wallpaper automatically")
+        self._rotate_switch.set_subtitle("Periodically pick a new random wallpaper and theme")
+        auto_on = self.conf.get("auto_rotate", "off") == "on"
+        self._rotate_switch.set_active(auto_on)
+        rotate_group.add(self._rotate_switch)
+
+        interval_row = Adw.ComboRow(title="Change every")
+        interval_model = Gtk.StringList.new([label for label, _ in ROTATE_INTERVALS])
+        interval_row.set_model(interval_model)
+        current_interval = self.conf.get("rotate_interval", "30")
+        interval_vals = [v for _, v in ROTATE_INTERVALS]
+        interval_row.set_selected(
+            interval_vals.index(current_interval) if current_interval in interval_vals else 3
+        )
+        self._interval_row = interval_row
+        rotate_group.add(interval_row)
+
+        # Connect signals after initial setup to avoid triggering on load
+        self._rotate_switch.connect("notify::active", self._on_rotate_toggled)
+        interval_row.connect("notify::selected", self._on_interval_changed)
+
+        page.add(rotate_group)
 
         # ── Search group ──
         search_group = Adw.PreferencesGroup(title="Search")
@@ -1021,6 +1189,24 @@ class WallpaperApp(Adw.Application):
         acct_group.add(key_row)
         page.add(acct_group)
 
+        # ── Cache group ──
+        cache_group = Adw.PreferencesGroup(title="Cache")
+
+        self._cache_size_row = Adw.ActionRow(
+            title="Wallhaven cache size",
+            subtitle=cache_size_str(),
+        )
+        cache_group.add(self._cache_size_row)
+
+        clear_btn_row = Adw.ActionRow(title="Clear all cached downloads and thumbnails")
+        clear_btn = Gtk.Button(label="Clear Cache")
+        clear_btn.set_valign(Gtk.Align.CENTER)
+        clear_btn.connect("clicked", self._on_clear_cache)
+        clear_btn_row.add_suffix(clear_btn)
+        cache_group.add(clear_btn_row)
+
+        page.add(cache_group)
+
         toolbar = Adw.ToolbarView()
         toolbar.add_top_bar(Adw.HeaderBar())
         toolbar.set_content(page)
@@ -1033,6 +1219,23 @@ class WallpaperApp(Adw.Application):
         src_map = {0: "local", 1: "wallhaven", 2: "both"}
         self._conf_update("source", src_map.get(row.get_selected(), "local"))
 
+    def _on_rotate_toggled(self, row, _pspec):
+        active = row.get_active()
+        self._conf_update("auto_rotate", "on" if active else "off")
+        if active:
+            interval = self.conf.get("rotate_interval", "30")
+            threading.Thread(target=enable_timer, args=(interval,), daemon=True).start()
+        else:
+            threading.Thread(target=disable_timer, daemon=True).start()
+
+    def _on_interval_changed(self, row, _pspec):
+        interval_vals = [v for _, v in ROTATE_INTERVALS]
+        selected = interval_vals[row.get_selected()]
+        self._conf_update("rotate_interval", selected)
+        # If auto-rotate is active, restart the timer with new interval
+        if self.conf.get("auto_rotate", "off") == "on":
+            threading.Thread(target=enable_timer, args=(selected,), daemon=True).start()
+
     def _on_cat_toggled(self, *_args):
         cats = "".join("1" if self._cat_checks[i].get_active() else "0" for i in range(3))
         self._conf_update("categories", cats)
@@ -1040,6 +1243,11 @@ class WallpaperApp(Adw.Application):
     def _on_pur_toggled(self, *_args):
         pur = "".join("1" if self._pur_checks[i].get_active() else "0" for i in range(3))
         self._conf_update("purity", pur)
+
+    def _on_clear_cache(self, _btn):
+        clear_all_wh_cache()
+        if hasattr(self, '_cache_size_row'):
+            self._cache_size_row.set_subtitle(cache_size_str())
 
     def _conf_update(self, key, value):
         self.conf[key] = value

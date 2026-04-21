@@ -1,0 +1,10 @@
+[Unit]
+Description=Rotate wallpaper and theme
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+# Only kill the main script on stop, not child processes (hyprpaper, waybar)
+KillMode=process
+Environment=HYPR_OS_DIR=%h/dev/hypr-os
+ExecStart=%h/.config/hypr/scripts/wallpaper.sh

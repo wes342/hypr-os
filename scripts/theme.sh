@@ -504,7 +504,7 @@ echo "  bg=$bg  fg=$fg  accent=$accent"
 hyprctl reload 2>/dev/null || true
 
 # Waybar
-pkill waybar 2>/dev/null; sleep 0.2; waybar &>/dev/null &
+pkill waybar 2>/dev/null || true; sleep 0.2; waybar &>/dev/null &
 
 # Close rofi so next open picks up the new wallpaper + colors
 pkill -x rofi 2>/dev/null || true
@@ -528,6 +528,7 @@ pkill -USR2 cava 2>/dev/null || true
 
 # Eww sensor panel — reload to pick up new colors.css, reopen on correct monitor
 if pgrep -x eww >/dev/null 2>&1; then
+    eww close sensor-panel-0 sensor-panel-1 2>/dev/null || true
     eww reload 2>/dev/null || true
     (sleep 1 && ~/.config/hypr/scripts/sensor-panel.sh) &
 fi

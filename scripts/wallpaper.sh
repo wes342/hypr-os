@@ -15,6 +15,13 @@ THEME_SCRIPT="$HYPR_OS_DIR/scripts/theme.sh"
 
 mkdir -p "$CACHE_DIR"
 
+# --restore flag: reuse last wallpaper instead of picking random
+RESTORE=false
+if [[ "${1:-}" == "--restore" ]]; then
+    RESTORE=true
+    shift
+fi
+
 # Read source mode from wallhaven.conf: local, wallhaven, or both.
 SOURCE_MODE="local"
 WH_CONF="$HOME/.config/hypr-os/wallhaven.conf"
@@ -23,8 +30,18 @@ WH_CONF="$HOME/.config/hypr-os/wallhaven.conf"
     [[ -n "$m" ]] && SOURCE_MODE="$m"
 }
 
+# If restoring, use cached wallpaper from last session
+if [[ "$RESTORE" == true && -f "$CACHE_FILE" ]]; then
+    CACHED=$(cat "$CACHE_FILE" 2>/dev/null)
+    if [[ -n "$CACHED" && -f "$CACHED" ]]; then
+        WALLPAPER="$CACHED"
+    fi
+fi
+
 # If a specific wallpaper is passed, use it; otherwise pick random
-if [[ -n "${1:-}" && -f "${1:-}" ]]; then
+if [[ -n "${WALLPAPER:-}" ]]; then
+    : # already set by --restore
+elif [[ -n "${1:-}" && -f "${1:-}" ]]; then
     WALLPAPER="$(realpath "$1")"
 else
     WALLPAPER=""
@@ -42,7 +59,7 @@ else
 
         if [[ ${#WALLS[@]} -eq 0 && -z "$WALLPAPER" ]]; then
             # Fall back to bundled default wallpaper (fresh install)
-            local default_wp="$CONFIG_DIR/wallpapers/default.jpg"
+            default_wp="$CONFIG_DIR/wallpapers/default.jpg"
             if [[ -f "$default_wp" ]]; then
                 WALLPAPER="$(realpath "$default_wp")"
             else
@@ -105,3 +122,8 @@ if [[ -x "$THEME_SCRIPT" ]]; then
 else
     echo "Theme script not found at $THEME_SCRIPT"
 fi
+
+# Pre-generate blurred wallpaper for launcher (background, non-blocking)
+BLUR_CACHE="$HOME/.cache/hypr-os/wallpaper-blur.png"
+magick "$WALLPAPER" -resize 800x600^ -gravity center -extent 800x600 \
+    -blur 0x10 -brightness-contrast -20x-10 "$BLUR_CACHE" 2>/dev/null &

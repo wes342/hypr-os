@@ -1,47 +1,19 @@
 #!/usr/bin/env bash
-# Toggle rofi launcher -- if running, kill it; otherwise launch it.
-# Reads the current wallpaper + theme colors fresh every launch so
-# it always matches the latest theme, even if colors.rasi hasn't
-# been reloaded yet.
+# Toggle app launcher. The GTK4 app stays resident after first launch
+# so subsequent opens are instant via D-Bus re-activation (~20ms).
 
-LOCKFILE="/tmp/hypr-os-launcher.lock"
-COLORS_CSS="$HOME/.config/waybar/colors.css"
+HYPR_OS_DIR="${HYPR_OS_DIR:-$HOME/dev/hypr-os}"
+APP_ID="dev.hypros.launcher"
+DBUS_PATH="/${APP_ID//\.//}"
 
-if [[ -f "$LOCKFILE" ]]; then
-    pkill -x rofi 2>/dev/null
-    rm -f "$LOCKFILE"
+# Try D-Bus activation (instant if app is pre-warmed)
+if dbus-send --session --print-reply --type=method_call \
+    --dest="$APP_ID" "$DBUS_PATH" \
+    org.freedesktop.Application.Activate \
+    dict:string:variant: &>/dev/null; then
     exit 0
 fi
 
-touch "$LOCKFILE"
-
-# Read current wallpaper
-WALLPAPER=$(cat "$HOME/.cache/hypr/current_wallpaper" 2>/dev/null || echo "")
-
-# Read live accent colors from the latest colors.css
-read_color() {
-    grep -oP "@define-color\\s+$1\\s+#\\K[0-9a-fA-F]{6}" "$COLORS_CSS" 2>/dev/null | head -1
-}
-ACCENT="#$(read_color accent)"
-ACCENT_DIM="#$(read_color accent_dim)"
-FG="#$(read_color fg)"
-FG_DIM="#$(read_color fg_dim)"
-[[ "$ACCENT" == "#" ]] && ACCENT="#7aa2f7"
-[[ "$ACCENT_DIM" == "#" ]] && ACCENT_DIM="#3d59a1"
-[[ "$FG" == "#" ]] && FG="#c0caf5"
-[[ "$FG_DIM" == "#" ]] && FG_DIM="#565f89"
-
-# Build live theme overrides
-THEME_STR=""
-if [[ -n "$WALLPAPER" && -f "$WALLPAPER" ]]; then
-    THEME_STR+="window { background-image: url(\"$WALLPAPER\", both); }"
-fi
-THEME_STR+=" window { border-color: ${ACCENT_DIM}; }"
-THEME_STR+=" * { text-color: ${FG}; }"
-THEME_STR+=" prompt { text-color: ${ACCENT}; }"
-THEME_STR+=" entry { placeholder-color: ${FG_DIM}; }"
-THEME_STR+=" element selected.normal { border-color: ${ACCENT}; }"
-
-rofi -show drun -show-icons -theme-str "$THEME_STR"
-
-rm -f "$LOCKFILE"
+# App not running yet — cold start
+python3 "$HYPR_OS_DIR/scripts/launcher-app.py" &
+disown

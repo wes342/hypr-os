@@ -59,6 +59,11 @@ window#waybar {
     margin-right: 0;
 }
 
+#custom-terminal,
+#custom-browser {
+    font-size: 15px;
+}
+
 #custom-terminal:hover,
 #custom-browser:hover,
 #custom-files:hover {

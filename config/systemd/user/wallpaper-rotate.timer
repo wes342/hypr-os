@@ -1,0 +1,10 @@
+[Unit]
+Description=Auto-rotate wallpaper on interval
+
+[Timer]
+OnActiveSec=30min
+OnUnitActiveSec=30min
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-THEME="$HOME/.config/rofi/config.rasi"
+THEME="$HOME/.config/rofi/dmenu.rasi"
 
 # ── Helpers ──────────────────────────────
 

@@ -36,7 +36,7 @@ window {
 /* ── Main box: pushed to the right half ── */
 mainbox {
     children:               [ inputbar, listview ];
-    background-color:       rgba(10, 10, 18, 0.82);
+    background-color:       @bg-dim;
     margin:                 0 0 0 22%;
     padding:                24px 20px;
     spacing:                14px;
@@ -46,7 +46,7 @@ mainbox {
 /* ── Search bar ── */
 inputbar {
     children:               [ prompt, entry ];
-    background-color:       rgba(255, 255, 255, 0.06);
+    background-color:       @bg-highlight;
     expand:                 false;
     border-radius:          12px;
     padding:                6px 8px;
@@ -97,8 +97,10 @@ element alternate.normal {
 }
 
 element selected.normal {
-    background-color:       rgba(255, 255, 255, 0.12);
+    background-color:       @bg-highlight;
     text-color:             @fg;
+    border:                 1px solid;
+    border-color:           @accent;
     border-radius:          10px;
 }
 

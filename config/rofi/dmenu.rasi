@@ -1,0 +1,94 @@
+/*
+ * dmenu theme -- centered dialog for simple menus and text input.
+ * Used by eye-candy, snapper, and other dmenu-style popups.
+ */
+
+@theme "/dev/null"
+@import "colors.rasi"
+
+* {
+    background-color:   transparent;
+    text-color:         @fg;
+    font:               "Iosevka Nerd Font 13";
+}
+
+window {
+    background-color:   @bg;
+    border-radius:      12px;
+    width:              420px;
+    padding:            0;
+    border:             2px solid;
+    border-color:       @accent-dim;
+    location:           center;
+}
+
+mainbox {
+    children:           [ inputbar, listview ];
+    background-color:   @bg;
+    padding:            20px;
+    spacing:            12px;
+    border-radius:      12px;
+}
+
+inputbar {
+    children:           [ prompt, entry ];
+    background-color:   @bg-highlight;
+    border-radius:      8px;
+    padding:            8px 12px;
+    spacing:            8px;
+}
+
+prompt {
+    background-color:   inherit;
+    text-color:         @accent;
+    font:               "Iosevka Nerd Font Bold 13";
+    padding:            4px 6px;
+}
+
+entry {
+    background-color:   inherit;
+    text-color:         @fg;
+    placeholder-color:  @fg-dim;
+    expand:             true;
+    padding:            4px 6px;
+    cursor:             text;
+}
+
+listview {
+    columns:            1;
+    lines:              8;
+    cycle:              true;
+    dynamic:            true;
+    scrollbar:          false;
+    spacing:            4px;
+    fixed-height:       false;
+}
+
+element {
+    orientation:        horizontal;
+    padding:            10px 14px;
+    border-radius:      8px;
+    spacing:            14px;
+    cursor:             pointer;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color:   transparent;
+    text-color:         @fg;
+}
+
+element selected.normal {
+    background-color:   @bg-highlight;
+    text-color:         @fg;
+    border:             1px solid;
+    border-color:       @accent;
+    border-radius:      8px;
+}
+
+element-text {
+    background-color:   inherit;
+    text-color:         inherit;
+    vertical-align:     0.5;
+    font:               "Iosevka Nerd Font 14";
+}
