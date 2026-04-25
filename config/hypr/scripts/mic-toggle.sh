@@ -19,10 +19,15 @@ play_sound() {
     disown 2>/dev/null || true
 }
 
-wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+# Find the Elgato Wave XLR source by name (ID can change on reboot).
+# Falls back to the default source if Elgato isn't connected.
+MIC_ID=$(wpctl status | grep -i "elgato.*mono" | grep -oP '\d+\.' | head -1 | tr -d '.')
+MIC_ID="${MIC_ID:-@DEFAULT_AUDIO_SOURCE@}"
+
+wpctl set-mute "$MIC_ID" toggle
 
 # wpctl get-volume returns e.g. "Volume: 1.00 [MUTED]" when muted.
-if wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | grep -q MUTED; then
+if wpctl get-volume "$MIC_ID" | grep -q MUTED; then
     play_sound "$SOUND_DIR/device-removed.oga"
     notify-send -t 1500 -i microphone-sensitivity-muted \
         "Microphone" "Muted" 2>/dev/null || true

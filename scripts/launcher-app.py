@@ -70,13 +70,13 @@ def ensure_blur(wallpaper):
     if not wallpaper:
         return None
     wp_mtime = int(Path(wallpaper).stat().st_mtime)
-    # Check if cached blur is still valid
+    cache_key = f"{wallpaper}:{wp_mtime}"
     marker = CACHE_DIR / "blur-mtime.txt"
     if BLUR_CACHE.exists() and marker.exists():
         try:
-            if int(marker.read_text().strip()) == wp_mtime:
+            if marker.read_text().strip() == cache_key:
                 return str(BLUR_CACHE)
-        except ValueError:
+        except Exception:
             pass
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     subprocess.run(
@@ -88,7 +88,7 @@ def ensure_blur(wallpaper):
          str(BLUR_CACHE)],
         capture_output=True, timeout=5,
     )
-    marker.write_text(str(wp_mtime))
+    marker.write_text(cache_key)
     return str(BLUR_CACHE) if BLUR_CACHE.exists() else None
 
 

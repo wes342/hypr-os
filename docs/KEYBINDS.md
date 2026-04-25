@@ -14,6 +14,10 @@ All keyboard shortcuts. `SUPER` is the Windows/Meta key.
 | `SUPER + M` | Exit Hyprland |
 | `SUPER + V` | Toggle floating |
 | `SUPER + B` | Random wallpaper + re-theme |
+| `SUPER + ALT + B` | Wallpaper browser |
+| `SUPER + ALT + E` | Eye candy effects |
+| `SUPER + ALT + S` | Snapper snapshot manager |
+| `SUPER + ALT + Space` | Settings menu |
 | `SUPER + L` | Lock screen |
 | `SUPER + SHIFT + R` | Reload Hyprland config |
 | `SUPER + CTRL + R` | Restart Waybar |

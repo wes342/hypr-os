@@ -48,12 +48,12 @@ After it finishes, log out and back into Hyprland.
 
 | Category | Apps |
 |----------|------|
-| **WM / Desktop** | hyprland, waybar, hyprpaper, hyprlock, hypridle, eww, nwg-dock-hyprland |
+| **WM / Desktop** | hyprland, waybar, hyprpaper, hyprlock, hypridle, eww |
 | **Launcher** | GTK4 app launcher (scripts/launcher-app.py) |
 | **Wallpaper** | GTK4 wallpaper manager with Wallhaven integration (scripts/wallpaper-app.py) |
-| **Terminals** | kitty, ghostty, alacritty |
-| **File Manager** | thunar, ranger, tumbler, ffmpegthumbnailer, thunar-archive-plugin, ark |
-| **Notifications** | swaync |
+| **Terminals** | kitty |
+| **File Manager** | thunar, tumbler, ffmpegthumbnailer, thunar-archive-plugin, ark |
+| **Notifications** | mako |
 | **Shell** | starship, zoxide, fastfetch, fzf, bat, ble.sh |
 | **System Monitors** | btop, htop, nvtop |
 | **Media / Audio** | ncmpcpp, mpd, cava, playerctl, mpv, pavucontrol |
@@ -70,7 +70,7 @@ the full app set by hand:
 ```bash
 # Official repos
 sudo pacman -S --needed git base-devel hyprland waybar hyprpaper hyprlock hypridle \
-  rofi-wayland swaync kitty alacritty btop htop lm_sensors nvtop \
+  rofi-wayland mako kitty btop htop lm_sensors nvtop \
   thunar thunar-archive-plugin tumbler ffmpegthumbnailer ark ranger imv \
   zathura zathura-pdf-mupdf imagemagick jq python curl bc socat \
   wl-clipboard cliphist grim slurp satty wf-recorder hyprpicker \
@@ -87,7 +87,7 @@ sudo pacman -S --needed git base-devel hyprland waybar hyprpaper hyprlock hyprid
   steam gamescope mangohud lib32-mangohud goverlay wine winetricks
 
 # AUR (requires yay/paru — enable [multilib] in /etc/pacman.conf first for gaming)
-yay -S --needed eww ghostty hyprshot nwg-dock-hyprland blesh-git \
+yay -S --needed eww hyprshot blesh-git \
   spotify-launcher cbonsai tty-clock
 ```
 
@@ -109,13 +109,14 @@ See [docs/KEYBINDS.md](docs/KEYBINDS.md) for the full list. Highlights:
 | `SUPER + ALT + S` | Snapper snapshot manager |
 | `SUPER + ALT + B` | Wallpaper browser |
 | `SUPER + ALT + E` | Eye candy effects |
+| `SUPER + ALT + Space` | Settings menu |
 | `SUPER + 1-0` | Switch workspace |
 
 ## Theming
 
 The theme system extracts dominant colors from your current wallpaper using `imagemagick` and generates config snippets for each application. Press `SUPER + B` to pick a random wallpaper and automatically update the theme everywhere.
 
-Themed applications: Hyprland borders, waybar, kitty, ghostty, alacritty, rofi, swaync, cava, btop, eww sensor panel, SDDM login screen, and the GTK4 launcher/wallpaper apps.
+Themed applications: Hyprland borders, waybar, kitty, rofi, mako, cava, btop, eww sensor panel, SDDM login screen, and the GTK4 launcher/wallpaper apps.
 
 Wallpapers are read from `~/Pictures/Wallpaper/`. The wallpaper manager (`SUPER + ALT + B`) also supports browsing and downloading from Wallhaven.
 
@@ -135,7 +136,7 @@ sudo pacman -Rns wofi dolphin dunst polkit-kde-agent hyprpolkitagent
 |-----------|-----|--------------|
 | `wofi` | duplicate launcher | GTK4 launcher |
 | `dolphin` | duplicate file manager | `thunar` |
-| `dunst` | duplicate notification daemon | `swaync` |
+| `dunst` | duplicate notification daemon | `mako` |
 | `polkit-kde-agent` | redundant polkit agent | `polkit-gnome` (autostarted) |
 | `hyprpolkitagent` | redundant polkit agent | `polkit-gnome` |
 
@@ -179,9 +180,7 @@ hypr-os/
 │   ├── rofi/           # Rofi themes (dmenu popups)
 │   ├── eww/            # Sensor panel + waybar dropdowns
 │   ├── kitty/          # Terminal
-│   ├── ghostty/        # Terminal
-│   ├── alacritty/      # Terminal
-│   ├── swaync/         # Notifications
+│   ├── mako/           # Notifications
 │   ├── fastfetch/      # System info
 │   ├── starship/       # Shell prompt
 │   ├── cava/           # Audio visualizer

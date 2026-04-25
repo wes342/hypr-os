@@ -46,27 +46,18 @@ elif [[ -n "${1:-}" && -f "${1:-}" ]]; then
 else
     WALLPAPER=""
 
-    # Try Wallhaven if source is wallhaven or both
-    if [[ "$SOURCE_MODE" == "wallhaven" || "$SOURCE_MODE" == "both" ]]; then
+    # Read local folder filter
+    LOCAL_DIR="$WALLPAPER_DIR"
+    [[ -f "$WH_CONF" ]] && {
+        LOCAL_FOLDER=$(grep '^local_folder=' "$WH_CONF" 2>/dev/null | cut -d= -f2)
+        [[ -n "$LOCAL_FOLDER" && -d "$WALLPAPER_DIR/$LOCAL_FOLDER" ]] && LOCAL_DIR="$WALLPAPER_DIR/$LOCAL_FOLDER"
+    }
+
+    if [[ "$SOURCE_MODE" == "both" ]]; then
+        # Both: collect local wallpapers and a wallhaven pick, then choose randomly
+        mapfile -t WALLS < <(find "$LOCAL_DIR" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null)
         WH_PATH=$("$HYPR_OS_DIR/scripts/wallhaven.py" random 2>/dev/null) || true
-        [[ -n "$WH_PATH" && -f "$WH_PATH" ]] && WALLPAPER="$WH_PATH"
-    fi
-
-    # Try local if source is local, both, or Wallhaven failed
-    if [[ -z "$WALLPAPER" && "$SOURCE_MODE" != "wallhaven" ]] || \
-       [[ -z "$WALLPAPER" && "$SOURCE_MODE" == "wallhaven" ]]; then
-        mapfile -t WALLS < <(find "$WALLPAPER_DIR" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null)
-
-        if [[ ${#WALLS[@]} -eq 0 && -z "$WALLPAPER" ]]; then
-            # Fall back to bundled default wallpaper (fresh install)
-            default_wp="$CONFIG_DIR/wallpapers/default.jpg"
-            if [[ -f "$default_wp" ]]; then
-                WALLPAPER="$(realpath "$default_wp")"
-            else
-                notify-send -t 3000 "Wallpaper" "No wallpapers found" 2>/dev/null || true
-                exit 1
-            fi
-        fi
+        [[ -n "$WH_PATH" && -f "$WH_PATH" ]] && WALLS+=("$WH_PATH")
 
         if [[ ${#WALLS[@]} -gt 0 ]]; then
             CURRENT=$(cat "$CACHE_FILE" 2>/dev/null || echo "")
@@ -76,6 +67,32 @@ else
                 TRIES=$((TRIES + 1))
                 [[ "$WALLPAPER" != "$CURRENT" || $TRIES -ge 5 ]] && break
             done
+        fi
+
+    elif [[ "$SOURCE_MODE" == "wallhaven" ]]; then
+        # Wallhaven only
+        WH_PATH=$("$HYPR_OS_DIR/scripts/wallhaven.py" random 2>/dev/null) || true
+        [[ -n "$WH_PATH" && -f "$WH_PATH" ]] && WALLPAPER="$WH_PATH"
+
+    else
+        # Local only (respects folder filter)
+        mapfile -t WALLS < <(find "$LOCAL_DIR" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null)
+        if [[ ${#WALLS[@]} -gt 0 ]]; then
+            CURRENT=$(cat "$CACHE_FILE" 2>/dev/null || echo "")
+            TRIES=0
+            while true; do
+                WALLPAPER="${WALLS[$RANDOM % ${#WALLS[@]}]}"
+                TRIES=$((TRIES + 1))
+                [[ "$WALLPAPER" != "$CURRENT" || $TRIES -ge 5 ]] && break
+            done
+        fi
+    fi
+
+    # Fall back to bundled default if nothing found
+    if [[ -z "$WALLPAPER" ]]; then
+        default_wp="$CONFIG_DIR/wallpapers/default.jpg"
+        if [[ -f "$default_wp" ]]; then
+            WALLPAPER="$(realpath "$default_wp")"
         fi
     fi
 

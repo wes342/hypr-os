@@ -47,16 +47,16 @@ PACMAN_PKGS=(
     hyprland hyprpaper hyprlock hypridle
 
     # Bar, launcher, notifications
-    waybar rofi-wayland swaync
+    waybar rofi-wayland mako
 
     # Terminals
-    kitty alacritty
+    kitty
 
     # System / process monitors
     btop htop lm_sensors nvtop
 
     # File manager + thumbnailers + archives + image viewer + PDF
-    thunar thunar-archive-plugin tumbler ffmpegthumbnailer ark ranger imv
+    thunar thunar-archive-plugin tumbler ffmpegthumbnailer ark imv
     zathura zathura-pdf-mupdf
 
     # Tooling the scripts rely on
@@ -99,7 +99,7 @@ PACMAN_PKGS=(
     firefox discord code qalculate-gtk
 
     # Gaming (needs multilib)
-    steam gamescope mangohud lib32-mangohud goverlay wine winetricks
+    steam gamescope mangohud lib32-mangohud
 )
 
 # NVIDIA-specific bits (only if an NVIDIA GPU is present)
@@ -111,9 +111,7 @@ fi
 # ── AUR packages ────────────────────────────────────────
 AUR_PKGS=(
     eww                    # widget toolkit for waybar dropdowns (AUR-only)
-    ghostty                # second terminal
     hyprshot               # screenshotting helper used by keybinds
-    nwg-dock-hyprland      # dock
     blesh-git              # ble.sh: fish-style autosuggestions for bash
     spotify-launcher       # Spotify desktop client (optional)
     cbonsai                # bonsai tree generator

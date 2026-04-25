@@ -32,7 +32,7 @@ DEFAULTS = {
     "query": "",
     "categories": "111",      # 1=general, 1=anime, 1=people
     "purity": "100",          # 1=sfw, 0=sketchy, 0=nsfw
-    "sorting": "random",      # random, toplist, hot, latest, relevance
+    "sorting": "date_added",   # date_added, toplist, hot, random, relevance
     "atleast": "2560x1440",
     "ratios": "16x9",
     "source": "local",        # local, wallhaven, both
@@ -79,9 +79,8 @@ def api_search(conf: dict, query: str = "", page: int = 1) -> list:
         "ratios": conf["ratios"],
         "page": str(page),
     }
-    q = query or conf.get("query", "")
-    if q:
-        params["q"] = q
+    if query:
+        params["q"] = query
     if conf.get("api_key"):
         params["apikey"] = conf["api_key"]
 
@@ -206,11 +205,13 @@ def cmd_download(args: list):
 
 
 def cmd_random(_args: list):
-    """Fetch one random wallpaper, download, print local path."""
+    """Fetch one random wallpaper matching saved settings, download, print path."""
     conf = read_conf()
     conf_copy = dict(conf)
     conf_copy["sorting"] = "random"
-    items = api_search(conf_copy)
+    # Use saved query so random picks match the user's filters
+    query = conf.get("query", "")
+    items = api_search(conf_copy, query=query)
     if not items:
         print("No results from Wallhaven.", file=sys.stderr)
         sys.exit(1)

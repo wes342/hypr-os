@@ -194,8 +194,7 @@ sudo pacman -Rns wofi dolphin dunst polkit-kde-agent hyprpolkitagent
 
 What each one is and what hypr-os uses instead:
 
-- `wofi` -> replaced by `rofi-wayland` (launcher, power menu, wallpaper
-  browser, keybinds cheatsheet all use rofi)
+- `wofi` -> replaced by GTK4 app launcher and `rofi-wayland` (menus)
 - `dolphin` -> replaced by `thunar`
 - `dunst` -> replaced by `swaync`
 - `polkit-kde-agent` and `hyprpolkitagent` -> redundant; hypr-os
@@ -223,6 +222,67 @@ After removing anything, mop up orphaned dependencies:
 ```bash
 sudo pacman -Qdtq | sudo pacman -Rns -
 ```
+
+## Extra Setup
+
+### Internal storage drive (NTFS)
+
+If you have a secondary internal drive (SATA/NVMe), mount it permanently
+via fstab. Find the drive's UUID:
+
+```bash
+lsblk -f
+```
+
+Create the mount point and add to fstab:
+
+```bash
+sudo mkdir -p /mnt/Storage
+echo 'UUID=YOUR_DRIVE_UUID  /mnt/Storage  ntfs3  rw,uid=1000,gid=1000,nofail  0 0' | sudo tee -a /etc/fstab
+sudo systemctl daemon-reload
+sudo mount /mnt/Storage
+```
+
+### TrueNAS / NFS network share
+
+To mount a TrueNAS (or any NFS) share, install the NFS tools and add
+an fstab entry:
+
+```bash
+sudo pacman -S --needed nfs-utils smbclient
+```
+
+Find available NFS exports on your server:
+
+```bash
+showmount -e YOUR_SERVER_IP
+```
+
+Create the mount point and add to fstab:
+
+```bash
+sudo mkdir -p /mnt/TrueNAS
+echo 'YOUR_SERVER_IP:/mnt/path/to/share  /mnt/TrueNAS  nfs  rw,soft,timeo=10,nofail,_netdev  0 0' | sudo tee -a /etc/fstab
+sudo systemctl daemon-reload
+sudo mount /mnt/TrueNAS
+```
+
+Key mount options:
+- `nofail` -- system boots normally if the drive/server is unavailable
+- `_netdev` -- waits for network before attempting NFS mount
+- `soft,timeo=10` -- times out gracefully if server is unreachable
+
+### Thunar sidebar bookmarks
+
+Add mounted drives and network shares to Thunar's sidebar by editing
+`~/.config/gtk-3.0/bookmarks`:
+
+```
+file:///mnt/Storage Storage
+file:///mnt/TrueNAS TrueNAS
+```
+
+These also appear in GTK file picker dialogs.
 
 ## Updating
 

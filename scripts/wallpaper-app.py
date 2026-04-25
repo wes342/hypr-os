@@ -174,13 +174,33 @@ def make_thumb(src: Path) -> Path:
     return thumb
 
 
-def list_local_wallpapers():
+def list_local_wallpapers(folder=None):
+    """List wallpapers. If folder is set, only from that subfolder."""
     exts = {".jpg", ".jpeg", ".png", ".webp"}
     if not WALL_DIR.exists():
         return []
+    search_dir = WALL_DIR / folder if folder else WALL_DIR
     return sorted(
-        p for p in WALL_DIR.rglob("*") if p.suffix.lower() in exts and p.is_file()
+        p for p in search_dir.rglob("*") if p.suffix.lower() in exts and p.is_file()
     )
+
+
+def list_wallpaper_folders():
+    """Return sorted list of subfolder names that contain at least one wallpaper."""
+    exts = {".jpg", ".jpeg", ".png", ".webp"}
+    if not WALL_DIR.exists():
+        return []
+    folders = []
+    for d in sorted(WALL_DIR.iterdir()):
+        if not d.is_dir() or d.name.startswith("."):
+            continue
+        # Check if folder has any wallpapers (recursive)
+        has_images = any(
+            f.suffix.lower() in exts for f in d.rglob("*") if f.is_file()
+        )
+        if has_images:
+            folders.append(d.name)
+    return folders
 
 
 # ── Wallhaven API ──
@@ -191,9 +211,8 @@ def wh_search(conf, query="", page=1):
         "sorting": conf["sorting"], "atleast": conf["atleast"],
         "ratios": conf["ratios"], "page": str(page),
     }
-    q = query or conf.get("query", "")
-    if q:
-        params["q"] = q
+    if query:
+        params["q"] = query
     if conf.get("api_key"):
         params["apikey"] = conf["api_key"]
     url = "https://wallhaven.cc/api/v1/search?" + urllib.parse.urlencode(params)
@@ -643,16 +662,39 @@ class WallpaperApp(Adw.Application):
 
     # ── Local tab ──
 
+    def _build_folder_dropdown(self):
+        """Build a dropdown with 'All' + each subfolder in ~/Pictures/Wallpaper/."""
+        folders = list_wallpaper_folders()
+        labels = ["All"] + folders
+        model = Gtk.StringList.new(labels)
+        dropdown = Gtk.DropDown(model=model)
+        dropdown.set_selected(0)
+        return dropdown, labels
+
     def _build_local_tab(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         box.set_margin_start(10)
         box.set_margin_end(10)
         box.set_margin_top(8)
 
-        # Search
+        # Filter bar: folder dropdown + search
+        filter_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+
+        self.local_folder_dropdown, self._local_folder_labels = self._build_folder_dropdown()
+        self.local_folder_dropdown.set_tooltip_text("Filter by folder")
+        # Restore saved folder selection
+        saved_folder = self.conf.get("local_folder", "")
+        if saved_folder and saved_folder in self._local_folder_labels:
+            self.local_folder_dropdown.set_selected(self._local_folder_labels.index(saved_folder))
+        self.local_folder_dropdown.connect("notify::selected", self._on_local_folder_changed)
+        filter_box.append(self.local_folder_dropdown)
+
         self.local_search = Gtk.SearchEntry(placeholder_text="Search local wallpapers...")
+        self.local_search.set_hexpand(True)
         self.local_search.connect("search-changed", self._on_local_search)
-        box.append(self.local_search)
+        filter_box.append(self.local_search)
+
+        box.append(filter_box)
 
         # Grid
         scroll = Gtk.ScrolledWindow(vexpand=True)
@@ -695,21 +737,52 @@ class WallpaperApp(Adw.Application):
         target.append(tile)
         return False
 
-    def _on_local_search(self, entry):
-        query = entry.get_text().lower()
-        child = self.local_flow.get_first_child()
+    def _get_selected_folder(self, dropdown, labels):
+        """Return the selected folder name, or None for 'All'."""
+        idx = dropdown.get_selected()
+        if idx == 0 or idx >= len(labels):
+            return None
+        return labels[idx]
+
+    def _filter_local_flow(self, flow, folder, query):
+        """Show/hide tiles in a flow based on folder and search query."""
+        child = flow.get_first_child()
         while child:
-            box = child.get_child()
-            lbl = None
-            c = box.get_first_child()
-            while c:
-                if isinstance(c, Gtk.Label):
-                    lbl = c
-                    break
-                c = c.get_next_sibling()
-            if lbl:
-                child.set_visible(query in lbl.get_label().lower())
+            visible = True
+            # Folder filter
+            if folder and hasattr(child, 'full_path') and child.full_path:
+                try:
+                    rel = child.full_path.relative_to(WALL_DIR)
+                    visible = rel.parts[0] == folder if len(rel.parts) > 1 else False
+                except ValueError:
+                    visible = False
+            # Text search filter
+            if visible and query:
+                box = child.get_child()
+                lbl = None
+                c = box.get_first_child()
+                while c:
+                    if isinstance(c, Gtk.Label):
+                        lbl = c
+                        break
+                    c = c.get_next_sibling()
+                if lbl:
+                    visible = query in lbl.get_label().lower()
+            child.set_visible(visible)
             child = child.get_next_sibling()
+
+    def _on_local_folder_changed(self, dropdown, _pspec):
+        folder = self._get_selected_folder(self.local_folder_dropdown, self._local_folder_labels)
+        self._conf_update("local_folder", folder or "")
+        self._apply_local_filter()
+
+    def _on_local_search(self, entry):
+        self._apply_local_filter()
+
+    def _apply_local_filter(self):
+        folder = self._get_selected_folder(self.local_folder_dropdown, self._local_folder_labels)
+        query = self.local_search.get_text().lower()
+        self._filter_local_flow(self.local_flow, folder, query)
 
     def _on_local_activated(self, flow, child):
         if child.full_path:
@@ -757,9 +830,58 @@ class WallpaperApp(Adw.Application):
         box.set_margin_end(10)
         box.set_margin_top(8)
 
-        self.both_search = Gtk.SearchEntry(placeholder_text="Search all wallpapers...")
+        # Filter bar: local folder dropdown + wallhaven sort + search
+        filter_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+
+        # Folder filter for local wallpapers
+        self.both_folder_dropdown, self._both_folder_labels = self._build_folder_dropdown()
+        self.both_folder_dropdown.set_tooltip_text("Filter local by folder")
+        saved_folder = self.conf.get("local_folder", "")
+        if saved_folder and saved_folder in self._both_folder_labels:
+            self.both_folder_dropdown.set_selected(self._both_folder_labels.index(saved_folder))
+        self.both_folder_dropdown.connect("notify::selected", self._on_both_folder_changed)
+        filter_box.append(self.both_folder_dropdown)
+
+        sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        sep.set_margin_start(4)
+        sep.set_margin_end(4)
+        filter_box.append(sep)
+
+        # Wallhaven sort buttons (same icons as Wallhaven tab)
+        self._both_sort_buttons = {}
+        for sort_id, icon, tooltip in [
+            ("date_added", self._wh_sort_icons.get("date_added", "L"), "Latest"),
+            ("toplist", self._wh_sort_icons.get("toplist", "T"), "Top rated"),
+            ("hot", self._wh_sort_icons.get("hot", "H"), "Trending"),
+            ("random", self._wh_sort_icons.get("random", "R"), "Random"),
+        ]:
+            btn = Gtk.Button(label=icon)
+            btn.set_tooltip_text(tooltip)
+            btn.add_css_class("sort-btn")
+            btn.connect("clicked", self._on_sort_clicked, sort_id)
+            filter_box.append(btn)
+            self._both_sort_buttons[sort_id] = btn
+
+        sep2 = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        sep2.set_margin_start(4)
+        sep2.set_margin_end(4)
+        filter_box.append(sep2)
+
+        # Search sort dropdown for Wallhaven results in Both tab
+        both_sort_model = Gtk.StringList.new(self._search_sort_labels)
+        self.both_search_sort = Gtk.DropDown(model=both_sort_model)
+        self.both_search_sort.set_tooltip_text("Sort search results")
+        current_ss = self.conf.get("search_sorting", "date_added")
+        if current_ss in self._search_sort_opts:
+            self.both_search_sort.set_selected(self._search_sort_opts.index(current_ss))
+        filter_box.append(self.both_search_sort)
+
+        self.both_search = Gtk.SearchEntry(placeholder_text="Search all...")
+        self.both_search.set_hexpand(True)
         self.both_search.connect("search-changed", self._on_both_search)
-        box.append(self.both_search)
+        filter_box.append(self.both_search)
+
+        box.append(filter_box)
 
         scroll = Gtk.ScrolledWindow(vexpand=True)
         self.both_flow = Gtk.FlowBox()
@@ -807,20 +929,45 @@ class WallpaperApp(Adw.Application):
         self.both_flow.append(tile)
         return False
 
+    def _on_both_folder_changed(self, dropdown, _pspec):
+        folder = self._get_selected_folder(self.both_folder_dropdown, self._both_folder_labels)
+        self._conf_update("local_folder", folder or "")
+        self._apply_both_filter()
+
     def _on_both_search(self, entry):
-        query = entry.get_text().lower()
+        self._apply_both_filter()
+
+    def _apply_both_filter(self):
+        folder = self._get_selected_folder(self.both_folder_dropdown, self._both_folder_labels)
+        query = self.both_search.get_text().lower()
         child = self.both_flow.get_first_child()
         while child:
-            box = child.get_child()
-            lbl = None
-            c = box.get_first_child()
-            while c:
-                if isinstance(c, Gtk.Label):
-                    lbl = c
-                    break
-                c = c.get_next_sibling()
-            if lbl:
-                child.set_visible(query in lbl.get_label().lower())
+            visible = True
+            is_local = hasattr(child, 'full_path') and child.full_path and not hasattr(child, 'wh_item')
+            is_wh = hasattr(child, 'wh_item') and child.wh_item
+
+            # Folder filter only applies to local wallpapers
+            if folder and is_local:
+                try:
+                    rel = child.full_path.relative_to(WALL_DIR)
+                    visible = rel.parts[0] == folder if len(rel.parts) > 1 else False
+                except ValueError:
+                    visible = False
+
+            # Text search applies to all
+            if visible and query:
+                box = child.get_child()
+                lbl = None
+                c = box.get_first_child()
+                while c:
+                    if isinstance(c, Gtk.Label):
+                        lbl = c
+                        break
+                    c = c.get_next_sibling()
+                if lbl:
+                    visible = query in lbl.get_label().lower()
+
+            child.set_visible(visible)
             child = child.get_next_sibling()
 
     def _on_both_activated(self, flow, child):
@@ -850,13 +997,15 @@ class WallpaperApp(Adw.Application):
 
         # Sorting quick-buttons
         self._sort_buttons = {}
+        self._wh_sort_icons = {}
         sort_items = [
-            ("latest",  "󰃭", "Latest uploads"),
-            ("toplist", "󰓎", "Top rated"),
-            ("hot",     "󰈸", "Trending"),
-            ("random",  "󰒝", "Random"),
+            ("date_added",  "\U000f00ed", "Latest uploads"),
+            ("toplist", "\U000f04ce", "Top rated"),
+            ("hot",     "\U000f0238", "Trending"),
+            ("random",  "\U000f049d", "Random"),
         ]
         for sort_id, icon, tooltip in sort_items:
+            self._wh_sort_icons[sort_id] = icon
             btn = Gtk.Button(label=icon)
             btn.set_tooltip_text(tooltip)
             btn.add_css_class("sort-btn")
@@ -872,6 +1021,17 @@ class WallpaperApp(Adw.Application):
         sep.set_margin_end(4)
         search_box.append(sep)
 
+        # Search sort dropdown (filters search results only, not browse buttons)
+        self._search_sort_opts = ["date_added", "toplist", "hot", "random", "relevance"]
+        self._search_sort_labels = ["Latest", "Top Rated", "Trending", "Random", "Relevance"]
+        search_sort_model = Gtk.StringList.new(self._search_sort_labels)
+        self.wh_search_sort = Gtk.DropDown(model=search_sort_model)
+        self.wh_search_sort.set_tooltip_text("Sort search results")
+        current_ss = self.conf.get("search_sorting", "date_added")
+        if current_ss in self._search_sort_opts:
+            self.wh_search_sort.set_selected(self._search_sort_opts.index(current_ss))
+        search_box.append(self.wh_search_sort)
+
         self.wh_search = Gtk.SearchEntry(placeholder_text="Search Wallhaven...")
         self.wh_search.set_text(self.conf.get("query", ""))
         self.wh_search.set_hexpand(True)
@@ -882,6 +1042,11 @@ class WallpaperApp(Adw.Application):
         search_btn.connect("clicked", self._on_wh_search)
         search_box.append(search_btn)
         box.append(search_box)
+
+        # Track active view state for pagination
+        self._wh_browse_mode = True
+        self._wh_current_query = ""
+        self._wh_current_sorting = self.conf.get("sorting", "date_added")
 
         # Grid
         self.wh_scroll = Gtk.ScrolledWindow(vexpand=True)
@@ -921,38 +1086,52 @@ class WallpaperApp(Adw.Application):
         return box
 
     def _on_sort_clicked(self, _btn, sort_id):
-        """Quick-sort button: browse ALL wallpapers with this sorting."""
+        """Browse button: show ALL wallpapers with this sorting, no query."""
         self.conf["sorting"] = sort_id
         write_conf(self.conf)
         self._update_sort_buttons()
         self.wh_page = 1
-        # Clear the search query so we get ALL wallpapers for this sort,
-        # not a filtered subset. Like clicking Hot/Latest/etc on wallhaven.cc.
-        self.wh_search.set_text("")
+        self._wh_browse_mode = True
+        self._wh_current_query = ""
+        self._wh_current_sorting = sort_id
         self.wh_status.set_label(f"Loading {sort_id}...")
-        threading.Thread(target=self._load_wh_results, args=("",), daemon=True).start()
+        threading.Thread(
+            target=self._load_wh_results, args=("", sort_id), daemon=True
+        ).start()
 
     def _update_sort_buttons(self):
-        """Highlight the active sort button."""
-        current = self.conf.get("sorting", "random")
-        for sid, btn in self._sort_buttons.items():
-            if sid == current:
-                btn.add_css_class("sort-active")
-            else:
-                btn.remove_css_class("sort-active")
+        """Highlight the active sort button in both Wallhaven and Both tabs."""
+        current = self.conf.get("sorting", "date_added")
+        for buttons in [self._sort_buttons, getattr(self, '_both_sort_buttons', {})]:
+            for sid, btn in buttons.items():
+                if sid == current:
+                    btn.add_css_class("sort-active")
+                else:
+                    btn.remove_css_class("sort-active")
 
     def _on_wh_search(self, *_args):
         query = self.wh_search.get_text()
+        search_sorting = self._search_sort_opts[self.wh_search_sort.get_selected()]
         self.wh_page = 1
-        self.wh_status.set_label("Searching...")
-        # Persist the query for next session
+        self._wh_browse_mode = False
+        self._wh_current_query = query
+        self._wh_current_sorting = search_sorting
+        self.wh_status.set_label("Searching..." if query.strip() else "Loading...")
         self.conf["query"] = query
+        self.conf["search_sorting"] = search_sorting
         write_conf(self.conf)
-        threading.Thread(target=self._load_wh_results, args=(query,), daemon=True).start()
+        threading.Thread(
+            target=self._load_wh_results, args=(query, search_sorting), daemon=True
+        ).start()
 
-    def _load_wh_results(self, query):
+    def _load_wh_results(self, query, sorting=None):
         self.conf = read_conf()
-        items = wh_search(self.conf, query=query, page=self.wh_page)
+        # Use the explicit sorting for this request (browse button or search
+        # dropdown) so the two modes stay independent of conf["sorting"].
+        conf = dict(self.conf)
+        if sorting:
+            conf["sorting"] = sorting
+        items = wh_search(conf, query=query, page=self.wh_page)
         self.wh_items = items
 
         # Download thumbs for current results
@@ -1001,9 +1180,12 @@ class WallpaperApp(Adw.Application):
 
     def _wh_change_page(self, delta):
         self.wh_page = max(1, self.wh_page + delta)
-        query = self.wh_search.get_text()
         self.wh_status.set_label("Loading...")
-        threading.Thread(target=self._load_wh_results, args=(query,), daemon=True).start()
+        threading.Thread(
+            target=self._load_wh_results,
+            args=(self._wh_current_query, self._wh_current_sorting),
+            daemon=True,
+        ).start()
 
     def _on_wh_activated(self, flow, child):
         if child.wh_item:
@@ -1129,10 +1311,10 @@ class WallpaperApp(Adw.Application):
         search_group.add(query_row)
 
         sort_row = Adw.ComboRow(title="Sorting")
-        sort_model = Gtk.StringList.new(["random", "toplist", "hot", "latest", "relevance"])
+        sort_model = Gtk.StringList.new(["random", "toplist", "hot", "date_added", "relevance"])
         sort_row.set_model(sort_model)
-        sort_opts = ["random", "toplist", "hot", "latest", "relevance"]
-        current_sort = self.conf.get("sorting", "random")
+        sort_opts = ["random", "toplist", "hot", "date_added", "relevance"]
+        current_sort = self.conf.get("sorting", "date_added")
         sort_row.set_selected(sort_opts.index(current_sort) if current_sort in sort_opts else 0)
         sort_row.connect("notify::selected", lambda r, _:
             self._conf_update("sorting", sort_opts[r.get_selected()]))
