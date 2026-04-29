@@ -54,12 +54,12 @@ else
     }
 
     if [[ "$SOURCE_MODE" == "both" ]]; then
-        # Both: collect local wallpapers and a wallhaven pick, then choose randomly
+        # Both: 50/50 coin flip between local and wallhaven
         mapfile -t WALLS < <(find "$LOCAL_DIR" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null)
-        WH_PATH=$("$HYPR_OS_DIR/scripts/wallhaven.py" random 2>/dev/null) || true
-        [[ -n "$WH_PATH" && -f "$WH_PATH" ]] && WALLS+=("$WH_PATH")
+        COIN=$((RANDOM % 2))
 
-        if [[ ${#WALLS[@]} -gt 0 ]]; then
+        if [[ $COIN -eq 0 && ${#WALLS[@]} -gt 0 ]]; then
+            # Pick random local
             CURRENT=$(cat "$CACHE_FILE" 2>/dev/null || echo "")
             TRIES=0
             while true; do
@@ -67,6 +67,18 @@ else
                 TRIES=$((TRIES + 1))
                 [[ "$WALLPAPER" != "$CURRENT" || $TRIES -ge 5 ]] && break
             done
+        else
+            # Pick from wallhaven
+            WH_PATH=$("$HYPR_OS_DIR/scripts/wallhaven.py" random 2>/dev/null) || true
+            [[ -n "$WH_PATH" && -f "$WH_PATH" ]] && WALLPAPER="$WH_PATH"
+        fi
+
+        # Fallback: if chosen source failed, try the other
+        if [[ -z "$WALLPAPER" && ${#WALLS[@]} -gt 0 ]]; then
+            WALLPAPER="${WALLS[$RANDOM % ${#WALLS[@]}]}"
+        elif [[ -z "$WALLPAPER" ]]; then
+            WH_PATH=$("$HYPR_OS_DIR/scripts/wallhaven.py" random 2>/dev/null) || true
+            [[ -n "$WH_PATH" && -f "$WH_PATH" ]] && WALLPAPER="$WH_PATH"
         fi
 
     elif [[ "$SOURCE_MODE" == "wallhaven" ]]; then

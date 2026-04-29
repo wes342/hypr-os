@@ -538,6 +538,9 @@ class WallpaperApp(Adw.Application):
         if source in ("local", "wallhaven", "both"):
             self.stack.set_visible_child_name(source)
 
+        # Sync filters when switching tabs
+        self.stack.connect("notify::visible-child", self._on_tab_changed)
+
         # ── Assemble ──
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         main_box.append(header)
@@ -549,6 +552,18 @@ class WallpaperApp(Adw.Application):
         threading.Thread(target=self._load_local_tiles, daemon=True).start()
         threading.Thread(target=self._load_wh_results,
                          args=(self.conf.get("query", ""),), daemon=True).start()
+
+    def _on_tab_changed(self, stack, _pspec):
+        """Sync filters when switching tabs."""
+        current = stack.get_visible_child_name()
+        if current == "both":
+            folder = self._get_selected_folder(self.local_folder_dropdown, self._local_folder_labels)
+            self._sync_folder_dropdown(self.both_folder_dropdown, self._both_folder_labels, folder)
+            self._apply_both_filter()
+        elif current == "local":
+            folder = self._get_selected_folder(self.both_folder_dropdown, self._both_folder_labels)
+            self._sync_folder_dropdown(self.local_folder_dropdown, self._local_folder_labels, folder)
+            self._apply_local_filter()
 
     def _apply_theme_css(self, win):
         bg = read_color("bg", "#1a1b26")
@@ -729,6 +744,8 @@ class WallpaperApp(Adw.Application):
             GLib.idle_add(self._add_local_tile, thumb, label, wall)
 
         GLib.idle_add(self.local_status.set_label, f"{len(walls)} wallpapers")
+        # Apply folder filter after all tiles are added (delay to ensure queue is flushed)
+        GLib.timeout_add(500, self._apply_local_filter_once)
 
     def _add_local_tile(self, thumb, label, full_path, flow=None):
         target = flow or self.local_flow
@@ -772,9 +789,23 @@ class WallpaperApp(Adw.Application):
             child = child.get_next_sibling()
 
     def _on_local_folder_changed(self, dropdown, _pspec):
+        if getattr(self, '_syncing_folders', False):
+            return
         folder = self._get_selected_folder(self.local_folder_dropdown, self._local_folder_labels)
         self._conf_update("local_folder", folder or "")
+        self._sync_folder_dropdown(self.both_folder_dropdown, self._both_folder_labels, folder)
         self._apply_local_filter()
+        self._apply_both_filter()
+
+    def _sync_folder_dropdown(self, dropdown, labels, folder):
+        """Set a dropdown to match a folder name, skip if already matching."""
+        target_idx = 0  # "All"
+        if folder and folder in labels:
+            target_idx = labels.index(folder)
+        if dropdown.get_selected() != target_idx:
+            self._syncing_folders = True
+            dropdown.set_selected(target_idx)
+            self._syncing_folders = False
 
     def _on_local_search(self, entry):
         self._apply_local_filter()
@@ -783,6 +814,10 @@ class WallpaperApp(Adw.Application):
         folder = self._get_selected_folder(self.local_folder_dropdown, self._local_folder_labels)
         query = self.local_search.get_text().lower()
         self._filter_local_flow(self.local_flow, folder, query)
+
+    def _apply_local_filter_once(self):
+        self._apply_local_filter()
+        return False  # don't repeat
 
     def _on_local_activated(self, flow, child):
         if child.full_path:
@@ -879,7 +914,13 @@ class WallpaperApp(Adw.Application):
         self.both_search = Gtk.SearchEntry(placeholder_text="Search all...")
         self.both_search.set_hexpand(True)
         self.both_search.connect("search-changed", self._on_both_search)
+        self.both_search.connect("activate", self._on_both_search_activate)
+
+        both_search_btn = Gtk.Button(label="Search")
+        both_search_btn.connect("clicked", self._on_both_search_activate)
+
         filter_box.append(self.both_search)
+        filter_box.append(both_search_btn)
 
         box.append(filter_box)
 
@@ -902,7 +943,16 @@ class WallpaperApp(Adw.Application):
 
     def _populate_both_tab(self):
         """Called after local + wallhaven tiles are loaded."""
-        # Add local tiles to the both flow
+        # Clear existing tiles on main thread and wait for it
+        event = threading.Event()
+        def do_clear():
+            self._clear_flow(self.both_flow)
+            event.set()
+            return False
+        GLib.idle_add(do_clear)
+        event.wait(timeout=2)
+
+        # Add local tiles
         walls = list_local_wallpapers()
         for wall in walls:
             thumb = make_thumb(wall)
@@ -917,10 +967,21 @@ class WallpaperApp(Adw.Application):
                 if item["id"] in ignores:
                     continue
                 tp = wh_thumb_path(item)
-                label = f"🌐 {item['id']}  {item.get('resolution', '?')}"
+                label = f"\U0001f310 {item['id']}  {item.get('resolution', '?')}"
                 GLib.idle_add(self._add_wh_both_tile, tp, label, item)
 
         GLib.idle_add(self.both_status.set_label, f"{len(walls)} local + wallhaven results")
+        # Apply folder filter after all tiles are added (delay to ensure queue is flushed)
+        GLib.timeout_add(500, self._apply_both_filter_once)
+
+    def _clear_flow(self, flow):
+        """Remove all children from a FlowBox."""
+        while True:
+            child = flow.get_first_child()
+            if child is None:
+                break
+            flow.remove(child)
+        return False
 
     def _add_wh_both_tile(self, tp, label, item):
         tile = WallpaperTile(tp, label, wh_item=item,
@@ -930,12 +991,37 @@ class WallpaperApp(Adw.Application):
         return False
 
     def _on_both_folder_changed(self, dropdown, _pspec):
+        if getattr(self, '_syncing_folders', False):
+            return
         folder = self._get_selected_folder(self.both_folder_dropdown, self._both_folder_labels)
         self._conf_update("local_folder", folder or "")
+        self._sync_folder_dropdown(self.local_folder_dropdown, self._local_folder_labels, folder)
         self._apply_both_filter()
+        self._apply_local_filter()
 
     def _on_both_search(self, entry):
+        """Live filter local tiles by text as you type."""
         self._apply_both_filter()
+
+    def _on_both_search_activate(self, *_args):
+        """Enter/Search button — trigger Wallhaven search and sync with WH tab."""
+        query = self.both_search.get_text()
+        search_sorting = self._search_sort_opts[self.both_search_sort.get_selected()]
+        # Sync to Wallhaven tab
+        self.wh_search.set_text(query)
+        self.wh_search_sort.set_selected(self._search_sort_opts.index(search_sorting))
+        # Trigger the shared search
+        self.wh_page = 1
+        self._wh_browse_mode = False
+        self._wh_current_query = query
+        self._wh_current_sorting = search_sorting
+        self.both_status.set_label("Searching...")
+        self.conf["query"] = query
+        self.conf["search_sorting"] = search_sorting
+        write_conf(self.conf)
+        threading.Thread(
+            target=self._load_wh_results, args=(query, search_sorting), daemon=True
+        ).start()
 
     def _apply_both_filter(self):
         folder = self._get_selected_folder(self.both_folder_dropdown, self._both_folder_labels)
@@ -943,32 +1029,36 @@ class WallpaperApp(Adw.Application):
         child = self.both_flow.get_first_child()
         while child:
             visible = True
-            is_local = hasattr(child, 'full_path') and child.full_path and not hasattr(child, 'wh_item')
-            is_wh = hasattr(child, 'wh_item') and child.wh_item
+            is_local = child.full_path is not None and child.wh_item is None
 
-            # Folder filter only applies to local wallpapers
-            if folder and is_local:
-                try:
-                    rel = child.full_path.relative_to(WALL_DIR)
-                    visible = rel.parts[0] == folder if len(rel.parts) > 1 else False
-                except ValueError:
-                    visible = False
-
-            # Text search applies to all
-            if visible and query:
-                box = child.get_child()
-                lbl = None
-                c = box.get_first_child()
-                while c:
-                    if isinstance(c, Gtk.Label):
-                        lbl = c
-                        break
-                    c = c.get_next_sibling()
-                if lbl:
-                    visible = query in lbl.get_label().lower()
+            if is_local:
+                # Folder filter for local wallpapers
+                if folder:
+                    try:
+                        rel = child.full_path.relative_to(WALL_DIR)
+                        visible = rel.parts[0] == folder if len(rel.parts) > 1 else False
+                    except ValueError:
+                        visible = False
+                # Text search for local wallpapers (by filename)
+                if visible and query:
+                    box = child.get_child()
+                    lbl = None
+                    c = box.get_first_child()
+                    while c:
+                        if isinstance(c, Gtk.Label):
+                            lbl = c
+                            break
+                        c = c.get_next_sibling()
+                    if lbl:
+                        visible = query in lbl.get_label().lower()
+            # Wallhaven tiles: always show (filtered by API search, not locally)
 
             child.set_visible(visible)
             child = child.get_next_sibling()
+
+    def _apply_both_filter_once(self):
+        self._apply_both_filter()
+        return False  # don't repeat
 
     def _on_both_activated(self, flow, child):
         if child.wh_item:
