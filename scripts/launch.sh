@@ -13,7 +13,14 @@ export GTK_APPLICATION_PREFER_DARK_THEME="${GTK_APPLICATION_PREFER_DARK_THEME:-1
 export QT_STYLE_OVERRIDE="${QT_STYLE_OVERRIDE:-Adwaita-Dark}"
 
 get_default() {
-    grep "^\$$1 " "$DEFAULTS" | sed 's/^\$[a-zA-Z]* = //'
+    awk -v key="$1" '
+        $1 == "set" && $2 == "$" key {
+            $1 = ""; $2 = ""; sub(/^  */, ""); print; exit
+        }
+        $1 == "$" key && $2 == "=" {
+            $1 = ""; $2 = ""; sub(/^  */, ""); print; exit
+        }
+    ' "$DEFAULTS"
 }
 
 case "${1:-}" in
