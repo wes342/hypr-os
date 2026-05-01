@@ -21,6 +21,10 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gdk, GdkPixbuf, Gio, GLib, Gtk, Pango
 
+os.environ.setdefault("GTK_THEME", "Adwaita:dark")
+os.environ.setdefault("GTK_APPLICATION_PREFER_DARK_THEME", "1")
+os.environ.setdefault("QT_STYLE_OVERRIDE", "Adwaita-Dark")
+
 # ── Paths ──
 HOME = Path.home()
 COLORS_CSS = HOME / ".config" / "waybar" / "colors.css"
@@ -32,7 +36,7 @@ CURRENT_WP = HOME / ".cache" / "hypr" / "current_wallpaper"
 # (nerd_font_icon, tooltip, command, font_size_px)
 SIDEBAR_APPS = [
     ("\ue795", "Terminal", ["kitty"], 29),
-    ("\uf07b", "Files", ["thunar"], 26),
+    ("\uf07b", "Files", ["sh", "-lc", 'exec "${HYPR_OS_DIR:-$HOME/dev/hypr-os}/scripts/launch.sh" files'], 26),
     ("\U000f0239", "Browser", ["firefox"], 29),
 ]
 

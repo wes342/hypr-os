@@ -8,6 +8,10 @@ else
     DEFAULTS="$HOME/.config/hypr/defaults.conf"
 fi
 
+export GTK_THEME="${GTK_THEME:-Adwaita:dark}"
+export GTK_APPLICATION_PREFER_DARK_THEME="${GTK_APPLICATION_PREFER_DARK_THEME:-1}"
+export QT_STYLE_OVERRIDE="${QT_STYLE_OVERRIDE:-Adwaita-Dark}"
+
 get_default() {
     grep "^\$$1 " "$DEFAULTS" | sed 's/^\$[a-zA-Z]* = //'
 }

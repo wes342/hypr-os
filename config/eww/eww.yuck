@@ -222,7 +222,7 @@
               :icon "󰋊"
               :value "${storage.root_pct ?: '–'}%"
               :status {storage.status ?: "loading"}
-              :tooltip-cmd "thunar")))
+              :tooltip-cmd "${HYPR_OS_DIR:-$HOME/dev/hypr-os}/scripts/launch.sh files")))
 
 ;; ── Dropdown building blocks ─────────────────
 (defwidget dropdown-shell [variant title icon status]

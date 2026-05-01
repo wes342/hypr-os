@@ -152,7 +152,7 @@
         "exec": "~/.config/waybar/scripts/show.sh storage",
         "interval": 5,
         "tooltip": true,
-        "on-click": "thunar"
+        "on-click": "~/.config/sway/scripts/launch.sh files"
     },
     "custom/power": {
         "format": "⏻",

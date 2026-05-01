@@ -154,6 +154,17 @@ mkdir -p "$HOME/.cache/hypr"
 
 info "Created ~/Pictures/Wallpaper/ and ~/Pictures/Screenshots/"
 
+# ── Dark GTK/Qt defaults for launched apps ──
+systemctl --user set-environment \
+    GTK_THEME=Adwaita:dark \
+    GTK_APPLICATION_PREFER_DARK_THEME=1 \
+    QT_STYLE_OVERRIDE=Adwaita-Dark 2>/dev/null || true
+dbus-update-activation-environment --systemd \
+    GTK_THEME=Adwaita:dark \
+    GTK_APPLICATION_PREFER_DARK_THEME=1 \
+    QT_STYLE_OVERRIDE=Adwaita-Dark 2>/dev/null || true
+info "Configured dark GTK/Qt app defaults"
+
 # ── Seed default wallpaper if user's wallpaper dir is empty ──
 if [[ -d "$CONFIG_SRC/wallpapers" ]] && \
    [[ -z "$(find "$HOME/Pictures/Wallpaper" -type f \
