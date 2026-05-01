@@ -1,10 +1,11 @@
 # hypr-os
 
-A clean, gaming-focused Hyprland desktop environment for Arch Linux with Nvidia + Wayland. Features wallpaper-driven dynamic theming that keeps all applications visually consistent.
+A clean, gaming-focused Wayland desktop environment for Arch Linux with Nvidia support. Install it as either Hyprland or Sway/SwayFX, with wallpaper-driven dynamic theming that keeps all applications visually consistent.
 
 ## Features
 
-- **Modular Hyprland config** -- split into logical files for easy customization
+- **Desktop choice** -- install Hyprland or Sway/SwayFX configs from the same repo
+- **Modular configs** -- compositor configs split into logical files for easy customization
 - **Dynamic theming** -- colors extracted from your wallpaper and applied across all apps
 - **GTK4 app launcher** -- transparent overlay with blurred wallpaper, sidebar quick-launch icons, and instant open via D-Bus pre-warming (~25ms)
 - **Wallpaper manager** -- GTK4 app for browsing local and Wallhaven wallpapers with auto-rotate timer
@@ -22,7 +23,15 @@ Fresh Arch install:
 ```bash
 git clone https://github.com/wes342/hypr-os.git ~/dev/hypr-os
 cd ~/dev/hypr-os
-./install.sh --with-packages      # pulls in hyprland/waybar/fonts/etc. (sudo)
+./install.sh --with-packages      # Hyprland default: pulls in hyprland/waybar/fonts/etc. (sudo)
+```
+
+Fresh Arch + Sway/SwayFX install:
+
+```bash
+git clone https://github.com/wes342/hypr-os.git ~/dev/hypr-os
+cd ~/dev/hypr-os
+./install.sh --desktop sway --with-packages
 ```
 
 If packages are already installed, just run:
@@ -42,9 +51,11 @@ What `install.sh` does:
 6. Runs `theme.sh` once to generate the initial color palette
 7. Appends `HYPR_OS_DIR`, `starship`, and `zoxide` lines to your shell rc
 
-After it finishes, log out and back into Hyprland.
+After it finishes, log out and start either the Hyprland session or the SwayFX/Sway session, depending on the desktop target you installed.
 
 ## Applications
+
+### Hyprland Setup
 
 | Category | Apps |
 |----------|------|
@@ -62,16 +73,36 @@ After it finishes, log out and back into Hyprland.
 | **Gaming** | steam, gamescope, mangohud, goverlay, wine, winetricks |
 | **Other** | firefox, discord, code (VS Code), qalculate-gtk, imv, zathura |
 
+### Sway/SwayFX Setup
+
+| Category | Apps |
+|----------|------|
+| **WM / Desktop** | swayfx, swaybg, swayidle, swaylock-effects, waybar, eww |
+| **Launcher** | GTK4 app launcher (scripts/launcher-app.py) |
+| **Wallpaper** | GTK4 wallpaper manager with Wallhaven integration (scripts/wallpaper-app.py), swaybg |
+| **Terminals** | kitty |
+| **File Manager** | thunar, tumbler, ffmpegthumbnailer, thunar-archive-plugin, ark |
+| **Notifications** | mako |
+| **Shell** | starship, zoxide, fastfetch, fzf, bat, ble.sh |
+| **System Monitors** | btop, htop, nvtop |
+| **Media / Audio** | ncmpcpp, mpd, cava, playerctl, mpv, pavucontrol |
+| **Screenshots** | grim, slurp, satty |
+| **Screen Recording** | wf-recorder |
+| **Portals** | xdg-desktop-portal-wlr, xdg-desktop-portal-gtk |
+| **Eye Candy** | SwayFX blur/shadows/rounded corners, cmatrix, cbonsai, tty-clock |
+| **Gaming** | steam, gamescope, mangohud, goverlay, wine, winetricks |
+| **Other** | firefox, discord, code (VS Code), qalculate-gtk, imv, zathura |
+
 ### One-line install (everything above)
 
 `install.sh --with-packages` already runs this for you. If you want to install
-the full app set by hand:
+the full Hyprland app set by hand:
 
 ```bash
 # Official repos
 sudo pacman -S --needed git base-devel hyprland waybar hyprpaper hyprlock hypridle \
   rofi-wayland mako kitty btop htop lm_sensors nvtop \
-  thunar thunar-archive-plugin tumbler ffmpegthumbnailer ark ranger imv \
+  thunar thunar-archive-plugin tumbler ffmpegthumbnailer ark imv \
   zathura zathura-pdf-mupdf imagemagick jq python curl bc socat \
   wl-clipboard cliphist grim slurp satty wf-recorder hyprpicker \
   starship zoxide fastfetch fzf bat chafa cmatrix \
@@ -88,6 +119,32 @@ sudo pacman -S --needed git base-devel hyprland waybar hyprpaper hyprlock hyprid
 
 # AUR (requires yay/paru — enable [multilib] in /etc/pacman.conf first for gaming)
 yay -S --needed eww hyprshot blesh-git \
+  spotify-launcher cbonsai tty-clock
+```
+
+For Sway/SwayFX, replace the Hyprland-specific packages:
+
+```bash
+# Official repos
+sudo pacman -S --needed git base-devel swaybg swayidle \
+  waybar rofi-wayland mako kitty btop htop lm_sensors nvtop \
+  thunar thunar-archive-plugin tumbler ffmpegthumbnailer ark imv \
+  zathura zathura-pdf-mupdf imagemagick jq python curl bc socat \
+  wl-clipboard cliphist grim slurp satty wf-recorder wlr-randr \
+  starship zoxide fastfetch fzf bat chafa cmatrix \
+  ncmpcpp mpd cava playerctl mpv \
+  ttf-iosevka-nerd ttf-jetbrains-mono-nerd ttf-font-awesome \
+  noto-fonts noto-fonts-cjk noto-fonts-emoji \
+  papirus-icon-theme adwaita-icon-theme \
+  pipewire pipewire-pulse pipewire-alsa wireplumber pavucontrol \
+  qt5-wayland qt6-wayland \
+  xdg-desktop-portal-wlr xdg-desktop-portal-gtk xdg-utils \
+  polkit-gnome network-manager-applet blueman gvfs udisks2 \
+  firefox discord code qalculate-gtk \
+  steam gamescope mangohud lib32-mangohud goverlay wine winetricks
+
+# AUR
+yay -S --needed swayfx swaylock-effects eww blesh-git \
   spotify-launcher cbonsai tty-clock
 ```
 
@@ -116,7 +173,7 @@ See [docs/KEYBINDS.md](docs/KEYBINDS.md) for the full list. Highlights:
 
 The theme system extracts dominant colors from your current wallpaper using `imagemagick` and generates config snippets for each application. Press `SUPER + B` to pick a random wallpaper and automatically update the theme everywhere.
 
-Themed applications: Hyprland borders, waybar, kitty, rofi, mako, cava, btop, eww sensor panel, SDDM login screen, and the GTK4 launcher/wallpaper apps.
+Themed applications: Hyprland borders or Sway/SwayFX client colors, waybar, kitty, rofi, mako, cava, btop, eww sensor panel, SDDM login screen, and the GTK4 launcher/wallpaper apps.
 
 Wallpapers are read from `~/Pictures/Wallpaper/`. The wallpaper manager (`SUPER + ALT + B`) also supports browsing and downloading from Wallhaven.
 
@@ -176,6 +233,8 @@ re-roll the wallpaper (SUPER + B) -- no sudo needed at re-theme time.
 hypr-os/
 ├── config/
 │   ├── hypr/           # Hyprland (modular config files)
+│   ├── sway/           # Sway/SwayFX (modular config files)
+│   ├── swaylock/       # Sway lock screen
 │   ├── waybar/         # Bar config + styles
 │   ├── rofi/           # Rofi themes (dmenu popups)
 │   ├── eww/            # Sensor panel + waybar dropdowns

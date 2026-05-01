@@ -1,0 +1,14 @@
+# ┌──────────────────────────────────────────┐
+# │          hypr-os / swayfx config         │
+# │      Main config -- sources modules      │
+# └──────────────────────────────────────────┘
+
+include ~/.config/sway/defaults.conf
+include ~/.config/sway/env.conf
+include ~/.config/sway/outputs.conf
+include ~/.config/sway/appearance.conf
+include ~/.config/sway/keybinds.conf
+include ~/.config/sway/rules.conf
+include ~/.config/sway/theme.conf
+include ~/.config/sway/wallpaper.conf
+include ~/.config/sway/autostart.conf

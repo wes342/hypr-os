@@ -1,0 +1,174 @@
+{
+    "output": "DP-3",
+    "layer": "top",
+    "position": "top",
+    "height": 30,
+    "spacing": 0,
+    "margin-top": 4,
+    "margin-left": 8,
+    "margin-right": 8,
+    "modules-left": [
+        "custom/launcher",
+        "custom/terminal",
+        "custom/browser",
+        "custom/files",
+        "sway/workspaces",
+        "sway/window"
+    ],
+    "modules-center": [
+        "custom/clock",
+        "custom/cava",
+        "mpris"
+    ],
+    "modules-right": [
+        "tray",
+        "network",
+        "pulseaudio",
+        "custom/cpu",
+        "custom/gpu",
+        "custom/ram",
+        "custom/storage",
+        "custom/power"
+    ],
+    "custom/launcher": {
+        "format": "",
+        "tooltip": "App Launcher",
+        "on-click": "~/.config/sway/scripts/launcher.sh",
+        "exec": "echo ok",
+        "interval": 3600
+    },
+    "custom/terminal": {
+        "format": "",
+        "tooltip": "Terminal",
+        "on-click": "~/.config/sway/scripts/launch.sh terminal",
+        "exec": "echo ok",
+        "interval": 3600
+    },
+    "custom/browser": {
+        "format": "󰈹",
+        "tooltip": "Browser",
+        "on-click": "~/.config/sway/scripts/launch.sh browser",
+        "exec": "echo ok",
+        "interval": 3600
+    },
+    "custom/files": {
+        "format": "",
+        "tooltip": "File Manager",
+        "on-click": "~/.config/sway/scripts/launch.sh files",
+        "exec": "echo ok",
+        "interval": 3600
+    },
+    "sway/workspaces": {
+        "format": "{name}",
+        "disable-scroll": false,
+        "on-scroll-up": "swaymsg workspace next",
+        "on-scroll-down": "swaymsg workspace prev"
+    },
+    "sway/window": {
+        "format": "{}",
+        "max-length": 40,
+        "rewrite": {
+            "(.*) — Mozilla Firefox": " $1",
+            "(.*) - Visual Studio Code": " $1",
+            "(.*)": "$1"
+        },
+        "separate-outputs": true
+    },
+    "mpris": {
+        "format": "{player_icon} {artist} - {title}",
+        "format-paused": "{player_icon} {status_icon} {artist} - {title}",
+        "player-icons": {
+            "default": "",
+            "firefox": "",
+            "spotify": ""
+        },
+        "status-icons": {
+            "paused": ""
+        },
+        "max-length": 50,
+        "on-click": "playerctl play-pause",
+        "on-scroll-up": "playerctl next",
+        "on-scroll-down": "playerctl previous"
+    },
+    "custom/cava": {
+        "format": "{}",
+        "exec": "~/.config/waybar/scripts/cava-bar.sh",
+        "tooltip": false,
+        "escape": true
+    },
+    "tray": {
+        "icon-size": 16,
+        "spacing": 8
+    },
+    "network": {
+        "format-wifi": "󰤨 {signalStrength}%",
+        "format-ethernet": "󰈀 {ipaddr}",
+        "format-disconnected": "󰤭",
+        "tooltip-format": "{ifname}: {ipaddr}/{cidr}\n{bandwidthUpBits}  {bandwidthDownBits}",
+        "on-click": "~/.config/sway/scripts/launch.sh terminal -e nmtui"
+    },
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-muted": "󰖁 muted",
+        "format-icons": {
+            "default": [
+                "",
+                "",
+                ""
+            ]
+        },
+        "on-click": "~/.config/sway/scripts/audio-mixer.sh",
+        "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 2%+",
+        "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%-",
+        "tooltip-format": "{desc}\n{volume}%  ·  click: mixer  ·  right-click: mute  ·  scroll: ±2%"
+    },
+    "custom/cpu": {
+        "format": "{}",
+        "return-type": "json",
+        "exec": "~/.config/waybar/scripts/show.sh cpu",
+        "interval": 2,
+        "tooltip": true,
+        "on-click": "~/.config/sway/scripts/launch.sh terminal -e btop"
+    },
+    "custom/gpu": {
+        "format": "{}",
+        "return-type": "json",
+        "exec": "~/.config/waybar/scripts/show.sh gpu",
+        "interval": 2,
+        "tooltip": true,
+        "on-click": "~/.config/sway/scripts/launch.sh terminal -e nvtop"
+    },
+    "custom/ram": {
+        "format": "{}",
+        "return-type": "json",
+        "exec": "~/.config/waybar/scripts/show.sh ram",
+        "interval": 2,
+        "tooltip": true,
+        "on-click": "~/.config/sway/scripts/launch.sh terminal -e btop"
+    },
+    "custom/storage": {
+        "format": "{}",
+        "return-type": "json",
+        "exec": "~/.config/waybar/scripts/show.sh storage",
+        "interval": 5,
+        "tooltip": true,
+        "on-click": "thunar"
+    },
+    "custom/power": {
+        "format": "⏻",
+        "tooltip": "Power menu",
+        "on-click": "~/.config/sway/scripts/powermenu.sh",
+        "exec": "echo ok",
+        "interval": 3600
+    },
+    "custom/clock": {
+        "format": "{}",
+        "return-type": "json",
+        "exec": "~/.config/waybar/scripts/clock-show.sh",
+        "interval": 1,
+        "tooltip": true,
+        "on-click": "~/.config/waybar/scripts/clock-launch.sh",
+        "on-click-right": "~/.config/waybar/scripts/clock-cycle.sh"
+    }
+}

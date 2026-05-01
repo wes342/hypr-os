@@ -34,7 +34,11 @@ CHOICE=$(echo "$OPTIONS" | menu) || exit 0
 
 case "$CHOICE" in
     *Lock*)
-        hyprlock &
+        if command -v hyprlock >/dev/null 2>&1 && [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+            hyprlock &
+        else
+            swaylock -f &
+        fi
         ;;
     *Suspend*)
         systemctl suspend
@@ -43,7 +47,11 @@ case "$CHOICE" in
         systemctl hibernate
         ;;
     *Logout*)
-        hyprctl dispatch exit
+        if [[ -n "${SWAYSOCK:-}" ]]; then
+            swaymsg exit
+        else
+            hyprctl dispatch exit
+        fi
         ;;
     *Reboot*)
         if confirm "reboot"; then

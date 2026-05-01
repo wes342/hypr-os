@@ -1,6 +1,6 @@
 # Setup Guide
 
-Full walkthrough for setting up hypr-os on a fresh Arch Linux install.
+Full walkthrough for setting up hypr-os on a fresh Arch Linux install. The installer supports either Hyprland or Sway/SwayFX.
 
 ## Prerequisites
 
@@ -43,25 +43,46 @@ Reboot after this step.
 
 ## Step 2: Install Packages
 
+The recommended path is to let the repo select the right package set:
+
+```bash
+# Hyprland
+./install.sh --desktop hyprland --with-packages
+
+# Sway/SwayFX
+./install.sh --desktop sway --with-packages
+```
+
 ### Core Desktop
+
+Hyprland:
 
 ```bash
 sudo pacman -S hyprland waybar hyprpaper hyprlock hypridle \
-  rofi-wayland swaync nwg-dock-hyprland \
+  rofi-wayland mako \
   xdg-desktop-portal-hyprland xdg-desktop-portal-gtk \
   qt5-wayland qt6-wayland
+```
+
+Sway/SwayFX:
+
+```bash
+sudo pacman -S swaybg swayidle waybar rofi-wayland mako \
+  xdg-desktop-portal-wlr xdg-desktop-portal-gtk \
+  qt5-wayland qt6-wayland
+yay -S swayfx swaylock-effects
 ```
 
 ### Terminals
 
 ```bash
-sudo pacman -S kitty ghostty
+sudo pacman -S kitty
 ```
 
 ### File Management
 
 ```bash
-sudo pacman -S thunar thunar-archive-plugin tumbler ffmpegthumbnailer ark ranger
+sudo pacman -S thunar thunar-archive-plugin tumbler ffmpegthumbnailer ark
 ```
 
 ### Shell Tools
@@ -196,7 +217,7 @@ What each one is and what hypr-os uses instead:
 
 - `wofi` -> replaced by GTK4 app launcher and `rofi-wayland` (menus)
 - `dolphin` -> replaced by `thunar`
-- `dunst` -> replaced by `swaync`
+- `dunst` -> replaced by `mako`
 - `polkit-kde-agent` and `hyprpolkitagent` -> redundant; hypr-os
   autostarts `polkit-gnome` from `config/hypr/autostart.conf`. Pick
   one polkit agent and remove the others.

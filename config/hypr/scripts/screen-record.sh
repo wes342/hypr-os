@@ -9,7 +9,11 @@ if pgrep -x wf-recorder >/dev/null; then
 fi
 
 # Record the focused monitor
-MONITOR=$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused) | .name')
+if command -v hyprctl >/dev/null 2>&1 && hyprctl monitors -j >/dev/null 2>&1; then
+    MONITOR=$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused) | .name')
+else
+    MONITOR=$(swaymsg -t get_outputs 2>/dev/null | jq -r '.[] | select(.focused) | .name')
+fi
 [[ -z "$MONITOR" ]] && MONITOR="DP-3"
 
 mkdir -p ~/Videos

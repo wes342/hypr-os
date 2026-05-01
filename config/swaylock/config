@@ -1,0 +1,25 @@
+ignore-empty-password
+show-failed-attempts
+font=Iosevka Nerd Font
+font-size=18
+indicator
+indicator-radius=110
+indicator-thickness=8
+screenshots
+effect-blur=8x4
+effect-vignette=0.4:0.4
+clock
+timestr=%I:%M %p
+datestr=%A, %B %d
+key-hl-color=7aa2f7
+ring-color=3b4261
+ring-ver-color=7aa2f7
+ring-wrong-color=f7768e
+inside-color=0f1115cc
+inside-ver-color=0f1115cc
+inside-wrong-color=0f1115cc
+text-color=e6edf3
+text-ver-color=e6edf3
+text-wrong-color=e6edf3
+line-color=00000000
+separator-color=00000000

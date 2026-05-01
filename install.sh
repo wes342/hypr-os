@@ -22,29 +22,61 @@ warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
 error() { echo -e "${RED}[-]${NC} $1"; }
 
 WITH_PACKAGES=false
+DESKTOP="hyprland"
 for arg in "$@"; do
     case "$arg" in
         --with-packages|-p) WITH_PACKAGES=true ;;
+        --desktop=*) DESKTOP="${arg#*=}" ;;
         -h|--help)
-            echo "Usage: ./install.sh [--with-packages]"
+            echo "Usage: ./install.sh [--desktop hyprland|sway] [--with-packages]"
             echo ""
+            echo "  --desktop hyprland    Install Hyprland configs (default)."
+            echo "  --desktop sway        Install Sway/SwayFX configs."
             echo "  --with-packages, -p   Also install system dependencies via"
             echo "                        install-packages.sh (requires sudo)."
             exit 0
             ;;
+        --desktop)
+            # handled by the index-based parser below
+            ;;
     esac
 done
+
+args=("$@")
+for ((i = 0; i < ${#args[@]}; i++)); do
+    if [[ "${args[$i]}" == "--desktop" ]]; then
+        DESKTOP="${args[$((i + 1))]:-}"
+    fi
+done
+
+case "$DESKTOP" in
+    hyprland|sway) ;;
+    *)
+        error "Unknown desktop '$DESKTOP'. Use hyprland or sway."
+        exit 1
+        ;;
+esac
 
 echo "╔══════════════════════════════════════╗"
 echo "║         hypr-os installer            ║"
 echo "╚══════════════════════════════════════╝"
 echo ""
+info "Desktop target: $DESKTOP"
+
+if [[ "$DESKTOP" == "sway" ]]; then
+    for stale in hypr hyprlock hypridle; do
+        [[ -L "$CONFIG_DEST/$stale" ]] && rm "$CONFIG_DEST/$stale"
+    done
+else
+    [[ -L "$CONFIG_DEST/sway" ]] && rm "$CONFIG_DEST/sway"
+    [[ -L "$CONFIG_DEST/swaylock" ]] && rm "$CONFIG_DEST/swaylock"
+fi
 
 # ── Optional: install system packages ────
 if [[ "$WITH_PACKAGES" == true ]]; then
     if [[ -x "$SCRIPT_DIR/install-packages.sh" ]]; then
         info "Running install-packages.sh..."
-        "$SCRIPT_DIR/install-packages.sh"
+        "$SCRIPT_DIR/install-packages.sh" --desktop "$DESKTOP"
         echo ""
     else
         error "install-packages.sh missing or not executable."
@@ -55,6 +87,12 @@ fi
 BACKED_UP=false
 for dir in "$CONFIG_SRC"/*/; do
     name=$(basename "$dir")
+    if [[ "$DESKTOP" == "hyprland" && "$name" =~ ^(sway|swaylock)$ ]]; then
+        continue
+    fi
+    if [[ "$DESKTOP" == "sway" && "$name" =~ ^(hypr|hyprlock|hypridle)$ ]]; then
+        continue
+    fi
     target="$CONFIG_DEST/$name"
 
     if [[ -e "$target" && ! -L "$target" ]]; then
@@ -72,26 +110,35 @@ done
 
 # ── Create symlinks ──────────────────────
 info "Creating symlinks..."
+mkdir -p "$CONFIG_DEST"
 for dir in "$CONFIG_SRC"/*/; do
     name=$(basename "$dir")
+    if [[ "$DESKTOP" == "hyprland" && "$name" =~ ^(sway|swaylock)$ ]]; then
+        continue
+    fi
+    if [[ "$DESKTOP" == "sway" && "$name" =~ ^(hypr|hyprlock|hypridle)$ ]]; then
+        continue
+    fi
     target="$CONFIG_DEST/$name"
 
     ln -sf "$dir" "$target"
     info "Linked: $name -> $target"
 done
 
-# ── Special: hyprpaper and hyprlock go inside hypr dir ──
-# They're already in config/hypr/ via the symlink, but some apps
-# expect them at specific paths
-for conf in hyprpaper.conf; do
-    if [[ -f "$CONFIG_SRC/hypr/$conf" ]]; then
-        info "  hypr/$conf included via symlink"
-    fi
-done
+if [[ "$DESKTOP" == "hyprland" ]]; then
+    # ── Special: hyprpaper and hyprlock go inside hypr dir ──
+    # They're already in config/hypr/ via the symlink, but some apps
+    # expect them at specific paths
+    for conf in hyprpaper.conf; do
+        if [[ -f "$CONFIG_SRC/hypr/$conf" ]]; then
+            info "  hypr/$conf included via symlink"
+        fi
+    done
 
-# Symlink hyprlock config
-if [[ -d "$CONFIG_SRC/hyprlock" ]]; then
-    ln -sf "$CONFIG_SRC/hyprlock/hyprlock.conf" "$CONFIG_DEST/hypr/hyprlock.conf" 2>/dev/null || true
+    # Symlink hyprlock config
+    if [[ -d "$CONFIG_SRC/hyprlock" ]]; then
+        ln -sf "$CONFIG_SRC/hyprlock/hyprlock.conf" "$CONFIG_DEST/hypr/hyprlock.conf" 2>/dev/null || true
+    fi
 fi
 
 # ── Starship config ──────────────────────
@@ -119,6 +166,7 @@ fi
 chmod +x "$SCRIPT_DIR/scripts/"*.sh 2>/dev/null || true
 chmod +x "$SCRIPT_DIR/install-packages.sh" 2>/dev/null || true
 chmod +x "$CONFIG_SRC/hypr/scripts/"*.sh 2>/dev/null || true
+chmod +x "$CONFIG_SRC/sway/scripts/"*.sh 2>/dev/null || true
 chmod +x "$CONFIG_SRC/waybar/scripts/"*.sh 2>/dev/null || true
 chmod +x "$CONFIG_SRC/waybar/scripts/"*.py 2>/dev/null || true
 chmod +x "$CONFIG_SRC/eww/scripts/"*.sh 2>/dev/null || true
@@ -128,8 +176,13 @@ info "Scripts marked executable"
 # ── Install systemd user units for wallpaper auto-rotate ──
 SYSTEMD_USER="$HOME/.config/systemd/user"
 mkdir -p "$SYSTEMD_USER"
-cp -f "$CONFIG_SRC/systemd/user/wallpaper-rotate.service" "$SYSTEMD_USER/"
-cp -f "$CONFIG_SRC/systemd/user/wallpaper-rotate.timer" "$SYSTEMD_USER/"
+for unit in wallpaper-rotate.service wallpaper-rotate.timer; do
+    src="$CONFIG_SRC/systemd/user/$unit"
+    dest="$SYSTEMD_USER/$unit"
+    if [[ "$(readlink -f "$src")" != "$(readlink -f "$dest" 2>/dev/null || true)" ]]; then
+        cp -f "$src" "$dest"
+    fi
+done
 systemctl --user daemon-reload 2>/dev/null || true
 info "Installed wallpaper-rotate systemd units"
 
@@ -174,7 +227,11 @@ fi
 
 echo ""
 info "Installation complete!"
-info "Reboot or restart Hyprland to apply changes."
+if [[ "$DESKTOP" == "sway" ]]; then
+    info "Log out and start the SwayFX/Sway session to apply changes."
+else
+    info "Reboot or restart Hyprland to apply changes."
+fi
 info "Press SUPER+B to re-roll the wallpaper and theme."
 echo ""
 

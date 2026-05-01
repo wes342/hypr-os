@@ -26,8 +26,13 @@ capture_to_stdout() {
             ;;
         window)
             local geom
-            geom=$(hyprctl -j activewindow \
-                | jq -r '"\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"')
+            if command -v hyprctl >/dev/null 2>&1 && hyprctl -j activewindow >/dev/null 2>&1; then
+                geom=$(hyprctl -j activewindow \
+                    | jq -r '"\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"')
+            else
+                geom=$(swaymsg -t get_tree \
+                    | jq -r '.. | objects | select(.focused? == true) | "\(.rect.x),\(.rect.y) \(.rect.width)x\(.rect.height)"')
+            fi
             grim -g "$geom" -
             ;;
         *)

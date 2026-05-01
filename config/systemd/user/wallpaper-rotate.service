@@ -4,7 +4,7 @@ After=graphical-session.target
 
 [Service]
 Type=oneshot
-# Only kill the main script on stop, not child processes (hyprpaper, waybar)
+# Only kill the main script on stop, not child processes (wallpaper daemons, waybar)
 KillMode=process
 Environment=HYPR_OS_DIR=%h/dev/hypr-os
-ExecStart=%h/.config/hypr/scripts/wallpaper.sh
+ExecStart=%h/dev/hypr-os/scripts/wallpaper.sh

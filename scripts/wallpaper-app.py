@@ -356,32 +356,41 @@ def apply_wallpaper(path: Path, retheme: bool, callback=None):
     cache.parent.mkdir(parents=True, exist_ok=True)
     cache.write_text(path_str)
 
-    # Write hyprpaper.conf
-    try:
-        monitors = json.loads(
-            subprocess.check_output(["hyprctl", "monitors", "-j"], timeout=3)
-        )
-        mon_names = [m["name"] for m in monitors]
-    except Exception:
-        mon_names = ["DP-3"]
-
-    hpc = HYPR_OS / "config" / "hypr" / "hyprpaper.conf"
-    lines = ["splash = false", "ipc = on", ""]
-    for m in mon_names:
-        lines += [f"wallpaper {{", f"    monitor = {m}", f"    path = {path_str}", "}", ""]
-    hpc.write_text("\n".join(lines))
-
-    subprocess.run(["killall", "hyprpaper"], capture_output=True)
-    subprocess.Popen(["hyprpaper"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    env = {**os.environ, "HYPR_OS_DIR": str(HYPR_OS)}
+    if os.environ.get("SWAYSOCK"):
+        env["HYPR_OS_DESKTOP"] = "sway"
 
     if retheme:
         subprocess.run(
-            [str(THEME_SH), path_str],
-            env={**os.environ, "HYPR_OS_DIR": str(HYPR_OS)},
+            [str(HYPR_OS / "scripts" / "wallpaper.sh"), path_str],
+            env=env,
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         if callback:
             GLib.idle_add(callback)
+        return
+
+    if os.environ.get("SWAYSOCK"):
+        subprocess.run(["pkill", "-x", "swaybg"], capture_output=True)
+        subprocess.Popen(["swaybg", "-m", "fill", "-i", path_str],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        try:
+            monitors = json.loads(
+                subprocess.check_output(["hyprctl", "monitors", "-j"], timeout=3)
+            )
+            mon_names = [m["name"] for m in monitors]
+        except Exception:
+            mon_names = ["DP-3"]
+
+        hpc = HYPR_OS / "config" / "hypr" / "hyprpaper.conf"
+        lines = ["splash = false", "ipc = on", ""]
+        for m in mon_names:
+            lines += [f"wallpaper {{", f"    monitor = {m}", f"    path = {path_str}", "}", ""]
+        hpc.write_text("\n".join(lines))
+
+        subprocess.run(["killall", "hyprpaper"], capture_output=True)
+        subprocess.Popen(["hyprpaper"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 # ── GTK App ──

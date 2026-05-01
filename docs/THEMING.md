@@ -8,7 +8,7 @@ hypr-os uses a wallpaper-driven dynamic theming system. Colors are extracted fro
 2. **Color extraction** -- `imagemagick` extracts a 16-color palette from the wallpaper
 3. **Theme generation** -- `scripts/theme.sh` maps the palette to named color roles (background, foreground, accent, etc.)
 4. **Config updates** -- theme snippets are written for each app (kitty, rofi, waybar, etc.)
-5. **Live reload** -- apps that support it are reloaded automatically (waybar, swaync)
+5. **Live reload** -- apps that support it are reloaded automatically (Hyprland/Sway, waybar, mako)
 
 ## Color Roles
 
@@ -32,12 +32,13 @@ The theme script writes the following files:
 | File | App |
 |------|-----|
 | `config/hypr/theme.conf` | Hyprland border colors |
+| `config/sway/theme.conf` | Sway/SwayFX client and effect colors |
+| `config/swaylock/config` | Sway lock screen colors |
 | `config/kitty/current-theme.conf` | Kitty terminal colors |
-| `config/ghostty/theme` | Ghostty terminal colors |
 | `config/waybar/colors.css` | Waybar CSS variables |
 | `config/rofi/colors.rasi` | Rofi color variables |
-| `config/swaync/colors.css` | Notification colors |
-| `config/cava/colors` | Cava visualizer colors |
+| `config/mako/config` | Notification colors |
+| `config/cava/config` | Cava visualizer colors |
 
 ## Manual Theming
 

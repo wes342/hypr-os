@@ -19,6 +19,30 @@ The Hyprland config is split into modular files sourced by the main `hyprland.co
 | `rules.conf` | Window rules and workspace assignments |
 | `theme.conf` | Auto-generated colors from wallpaper |
 
+## Sway / SwayFX
+
+**Config location:** `config/sway/`
+
+The Sway target mirrors the Hyprland workflow but swaps compositor-specific apps for wlroots/Sway replacements:
+
+| Hyprland setup | Sway setup | Purpose |
+|----------------|------------|---------|
+| `hyprland` | `swayfx` | compositor, with SwayFX blur/shadows/rounded corners |
+| `hyprpaper` | `swaybg` | wallpaper daemon |
+| `hyprlock` | `swaylock-effects` | lock screen |
+| `hypridle` | `swayidle` | idle handling |
+| `hyprctl` scripts | `swaymsg` scripts | IPC, reload, workspace/window actions |
+| `xdg-desktop-portal-hyprland` | `xdg-desktop-portal-wlr` | screen sharing/portal backend |
+| `hyprpicker` | `grim` + `slurp` + `magick` | color picker binding |
+
+Sway starts Waybar with `config/waybar/config-sway.jsonc`, which uses `sway/workspaces` and `sway/window` modules. The wallpaper manager, launcher, theme generator, mako, rofi, kitty, cava, btop, eww, and SDDM theme stay shared between both desktops.
+
+Install with:
+
+```bash
+./install.sh --desktop sway --with-packages
+```
+
 ## Waybar
 
 **Config location:** `config/waybar/`
@@ -56,12 +80,6 @@ Grid-style app launcher with icon support. Theme colors are injected from the wa
 - `kitty.conf` -- font, padding, opacity settings
 - `current-theme.conf` -- color scheme (auto-generated from wallpaper)
 
-## Ghostty
-
-**Config location:** `config/ghostty/config`
-
-Mirrors kitty's theme for consistency. Font and opacity settings match.
-
 ## Fastfetch
 
 **Config location:** `config/fastfetch/config.jsonc`
@@ -85,19 +103,6 @@ Audio visualizer. Colors pulled from the wallpaper theme.
 **Config location:** `config/ncmpcpp/config`
 
 MPD client for music playback. Visualizer mode available.
-
-## Ranger
-
-**Config location:** `config/ranger/rc.conf`
-
-TUI file manager with image previews via kitty protocol.
-
-## SwayNC
-
-**Config location:** `config/swaync/`
-
-- `config.json` -- notification behavior
-- `style.css` -- notification appearance (themed)
 
 ## Hyprlock
 

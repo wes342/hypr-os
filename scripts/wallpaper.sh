@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ┌──────────────────────────────────────────┐
 # │  Wallpaper -- pick random wallpaper,     │
-# │  update hyprpaper.conf, and re-theme     │
+# │  update compositor wallpaper and theme   │
 # └──────────────────────────────────────────┘
 
 set -euo pipefail
@@ -12,6 +12,15 @@ CACHE_FILE="${CACHE_DIR}/current_wallpaper"
 HYPR_OS_DIR="${HYPR_OS_DIR:-$HOME/dev/hypr-os}"
 CONFIG_DIR="$HYPR_OS_DIR/config"
 THEME_SCRIPT="$HYPR_OS_DIR/scripts/theme.sh"
+COMPOSITOR="${HYPR_OS_DESKTOP:-}"
+
+if [[ -z "$COMPOSITOR" ]]; then
+    if [[ -n "${SWAYSOCK:-}" ]]; then
+        COMPOSITOR="sway"
+    else
+        COMPOSITOR="hyprland"
+    fi
+fi
 
 mkdir -p "$CACHE_DIR"
 
@@ -119,31 +128,40 @@ echo "$WALLPAPER" > "$CACHE_FILE"
 
 echo "Setting wallpaper: $WALLPAPER"
 
-# Get all connected monitor names
-MONITORS=$(hyprctl monitors -j 2>/dev/null | jq -r '.[].name' 2>/dev/null)
-if [[ -z "$MONITORS" ]]; then
-    MONITORS="DP-3"
-fi
+if [[ "$COMPOSITOR" == "sway" ]]; then
+    mkdir -p "$CONFIG_DIR/sway"
+    printf 'output * bg "%s" fill\n' "$WALLPAPER" > "$CONFIG_DIR/sway/wallpaper.conf"
+    pkill -x swaybg 2>/dev/null || true
+    sleep 0.2
+    swaybg -m fill -i "$WALLPAPER" &>/dev/null &
+    disown
+else
+    # Get all connected monitor names
+    MONITORS=$(hyprctl monitors -j 2>/dev/null | jq -r '.[].name' 2>/dev/null)
+    if [[ -z "$MONITORS" ]]; then
+        MONITORS="DP-3"
+    fi
 
-# Write hyprpaper.conf with new block syntax (v0.8+)
-{
-    echo "splash = false"
-    echo "ipc = on"
-    echo ""
-    while IFS= read -r mon; do
-        echo "wallpaper {"
-        echo "    monitor = $mon"
-        echo "    path = $WALLPAPER"
-        echo "}"
+    # Write hyprpaper.conf with new block syntax (v0.8+)
+    {
+        echo "splash = false"
+        echo "ipc = on"
         echo ""
-    done <<< "$MONITORS"
-} > "$CONFIG_DIR/hypr/hyprpaper.conf"
+        while IFS= read -r mon; do
+            echo "wallpaper {"
+            echo "    monitor = $mon"
+            echo "    path = $WALLPAPER"
+            echo "}"
+            echo ""
+        done <<< "$MONITORS"
+    } > "$CONFIG_DIR/hypr/hyprpaper.conf"
 
-# Restart hyprpaper to pick up the new config
-killall hyprpaper 2>/dev/null || true
-sleep 0.3
-hyprpaper &>/dev/null &
-disown
+    # Restart hyprpaper to pick up the new config
+    killall hyprpaper 2>/dev/null || true
+    sleep 0.3
+    hyprpaper &>/dev/null &
+    disown
+fi
 
 # Generate and apply theme from the new wallpaper
 if [[ -x "$THEME_SCRIPT" ]]; then

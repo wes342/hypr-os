@@ -14,6 +14,36 @@ info()  { echo -e "${GREEN}[+]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
 error() { echo -e "${RED}[-]${NC} $1"; }
 
+DESKTOP="hyprland"
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --desktop)
+            DESKTOP="${2:-}"
+            shift 2
+            ;;
+        --desktop=*)
+            DESKTOP="${1#*=}"
+            shift
+            ;;
+        -h|--help)
+            echo "Usage: ./install-packages.sh [--desktop hyprland|sway]"
+            exit 0
+            ;;
+        *)
+            error "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+case "$DESKTOP" in
+    hyprland|sway) ;;
+    *)
+        error "Unknown desktop '$DESKTOP'. Use hyprland or sway."
+        exit 1
+        ;;
+esac
+
 if ! command -v pacman &>/dev/null; then
     error "This script is for Arch / pacman-based systems only."
     exit 1
@@ -43,9 +73,6 @@ PACMAN_PKGS=(
     # Build prerequisites (needed for AUR helper bootstrap + makepkg)
     git base-devel
 
-    # Hyprland stack
-    hyprland hyprpaper hyprlock hypridle
-
     # Bar, launcher, notifications
     waybar rofi-wayland mako
 
@@ -63,7 +90,7 @@ PACMAN_PKGS=(
     imagemagick jq python curl bc socat
 
     # Clipboard, screenshotting, screen recording, color picker
-    wl-clipboard cliphist grim slurp satty wf-recorder hyprpicker
+    wl-clipboard cliphist grim slurp satty wf-recorder wlr-randr
 
     # Shell niceties (install.sh wires these into bashrc)
     starship zoxide fastfetch fzf bat chafa
@@ -87,7 +114,7 @@ PACMAN_PKGS=(
 
     # Qt/Wayland + XDG portals
     qt5-wayland qt6-wayland
-    xdg-desktop-portal-hyprland xdg-desktop-portal-gtk xdg-utils
+    xdg-desktop-portal-gtk xdg-utils
 
     # GTK / polkit / tray
     polkit-gnome network-manager-applet
@@ -102,6 +129,21 @@ PACMAN_PKGS=(
     steam gamescope mangohud lib32-mangohud
 )
 
+case "$DESKTOP" in
+    hyprland)
+        PACMAN_PKGS+=(
+            hyprland hyprpaper hyprlock hypridle hyprpicker
+            xdg-desktop-portal-hyprland
+        )
+        ;;
+    sway)
+        PACMAN_PKGS+=(
+            swaybg swayidle
+            xdg-desktop-portal-wlr
+        )
+        ;;
+esac
+
 # NVIDIA-specific bits (only if an NVIDIA GPU is present)
 if lspci 2>/dev/null | grep -qi nvidia; then
     info "NVIDIA GPU detected — including nvidia-utils"
@@ -111,12 +153,23 @@ fi
 # ── AUR packages ────────────────────────────────────────
 AUR_PKGS=(
     eww                    # widget toolkit for waybar dropdowns (AUR-only)
-    hyprshot               # screenshotting helper used by keybinds
     blesh-git              # ble.sh: fish-style autosuggestions for bash
     spotify-launcher       # Spotify desktop client (optional)
     cbonsai                # bonsai tree generator
     tty-clock              # terminal clock
 )
+
+case "$DESKTOP" in
+    hyprland)
+        AUR_PKGS+=(hyprshot)       # optional screenshot helper
+        ;;
+    sway)
+        AUR_PKGS+=(
+            swayfx                 # Sway compositor with blur/shadows/rounded corners
+            swaylock-effects       # fancier swaylock replacement
+        )
+        ;;
+esac
 
 # ── Install ─────────────────────────────────────────────
 info "Installing official repo packages (${#PACMAN_PKGS[@]} packages)..."
