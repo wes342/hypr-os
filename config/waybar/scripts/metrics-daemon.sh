@@ -15,6 +15,9 @@ INTERVAL="${INTERVAL:-2}"
 HIST_LEN=40
 mkdir -p "$OUT" "$STATE" "$HIST_DIR"
 
+exec 9>"$OUT/metrics-daemon.lock"
+flock -n 9 || exit 0
+
 # Status colors (semantic — fixed so ok/warm/critical are always
 # instantly readable regardless of wallpaper palette).
 COLOR_OK="#7daf5a"

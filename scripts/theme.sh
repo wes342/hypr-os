@@ -221,11 +221,6 @@ client.focused_inactive \$bg_highlight \$bg_highlight \$fg_dim \$bg_highlight \$
 client.unfocused        \$bg_dim \$bg_dim \$fg_dim \$bg_dim \$bg_dim
 client.urgent           $color1 $color1 \$fg $color1 $color1
 client.placeholder      \$bg \$bg \$fg_dim \$bg \$bg
-
-shadow_color ${bg}99
-shadow_inactive_color ${bg}77
-dim_inactive_colors.unfocused ${bg}AA
-dim_inactive_colors.urgent ${color1}AA
 EOF
 
 # ── Swaylock colors ──────────────────────
@@ -501,14 +496,23 @@ echo "Theme applied from: $(basename "$WALLPAPER")"
 echo "  bg=$bg  fg=$fg  accent=$accent"
 
 # ── Reload apps ──────────────────────────
-# Hyprland (border colors from theme.conf)
-hyprctl reload 2>/dev/null || true
+# Hyprland/Sway border colors from theme.conf.
+if [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+    hyprctl reload 2>/dev/null || true
+fi
 
-# Sway/SwayFX (client colors and effect colors from theme.conf)
-swaymsg reload 2>/dev/null || true
+if [[ -n "${SWAYSOCK:-}" ]]; then
+    swaymsg reload 2>/dev/null || true
+fi
 
 # Waybar
-pkill waybar 2>/dev/null || true; sleep 0.2; waybar &>/dev/null &
+pkill waybar 2>/dev/null || true
+sleep 0.2
+if [[ -n "${SWAYSOCK:-}" ]]; then
+    waybar -c "$HOME/.config/waybar/config-sway.jsonc" &>/dev/null &
+else
+    waybar &>/dev/null &
+fi
 
 # Close rofi so next open picks up the new wallpaper + colors
 pkill -x rofi 2>/dev/null || true
